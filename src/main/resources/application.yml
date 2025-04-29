@@ -1,6 +1,6 @@
 spring:
   application:
-    name: eTutor Task-App - Binary Search
+    name: eTutor Task-App - OWL
   messages:
     fallback-to-system-locale: false
 

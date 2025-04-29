@@ -10,7 +10,7 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 /**
- * Represents a binary search task.
+ * Represents an owl task.
  */
 @Entity
 @Table(name = "task")

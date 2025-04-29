@@ -8,7 +8,7 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 
 /**
- * Represents a binary search task group.
+ * Represents an owl task group.
  * <p>
  * It is also possible to create tasks without task types. Tasks of type owl would not need a task group.
  * Here a task group is only used for demonstration purposes.

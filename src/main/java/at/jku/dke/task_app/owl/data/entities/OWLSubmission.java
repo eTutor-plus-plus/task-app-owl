@@ -8,7 +8,7 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 
 /**
- * Represents a binary search input.
+ * Represents an owl input.
  */
 @Entity
 @Table(name = "submission")

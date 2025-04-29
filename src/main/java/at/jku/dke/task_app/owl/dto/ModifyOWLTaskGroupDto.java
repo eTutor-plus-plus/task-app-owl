@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
 
 /**
- * This class represents a data transfer object for modifying a binary search task group.
+ * This class represents a data transfer object for modifying an owl task group.
  *
  * @param minNumber The minimum number.
  * @param maxNumber The maximum number.
