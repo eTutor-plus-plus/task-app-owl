@@ -19,21 +19,20 @@ class OWLTaskGroupServiceTest {
     @Test
     void createTaskGroup() {
         // Arrange
-        ModifyTaskGroupDto<ModifyOWLTaskGroupDto> dto = new ModifyTaskGroupDto<>("binary-search", TaskStatus.APPROVED, new ModifyOWLTaskGroupDto(1, 2));
+        ModifyTaskGroupDto<ModifyOWLTaskGroupDto> dto = new ModifyTaskGroupDto<>("owl", TaskStatus.APPROVED, new ModifyOWLTaskGroupDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal"));
         OWLTaskGroupService service = new OWLTaskGroupService(null, null);
 
         // Act
         var taskGroup = service.createTaskGroup(3, dto);
 
         // Assert
-        assertEquals(dto.additionalData().minNumber(), taskGroup.getMinNumber());
-        assertEquals(dto.additionalData().maxNumber(), taskGroup.getMaxNumber());
+        assertEquals(dto.additionalData().solution(), taskGroup.getSolution());
     }
 
     @Test
     void createTaskGroupInvalidType() {
         // Arrange
-        ModifyTaskGroupDto<ModifyOWLTaskGroupDto> dto = new ModifyTaskGroupDto<>("sql", TaskStatus.APPROVED, new ModifyOWLTaskGroupDto(1, 2));
+        ModifyTaskGroupDto<ModifyOWLTaskGroupDto> dto = new ModifyTaskGroupDto<>("sql", TaskStatus.APPROVED, new ModifyOWLTaskGroupDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal"));
         OWLTaskGroupService service = new OWLTaskGroupService(null, null);
 
         // Act & Assert
@@ -43,24 +42,23 @@ class OWLTaskGroupServiceTest {
     @Test
     void updateTaskGroup() {
         // Arrange
-        ModifyTaskGroupDto<ModifyOWLTaskGroupDto> dto = new ModifyTaskGroupDto<>("binary-search", TaskStatus.APPROVED, new ModifyOWLTaskGroupDto(1, 2));
+        ModifyTaskGroupDto<ModifyOWLTaskGroupDto> dto = new ModifyTaskGroupDto<>("owl", TaskStatus.APPROVED, new ModifyOWLTaskGroupDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal"));
         OWLTaskGroupService service = new OWLTaskGroupService(null, null);
-        var taskGroup = new OWLTaskGroup(3, 4);
+        var taskGroup = new OWLTaskGroup(TaskStatus.APPROVED, "Class: Person\nSubClassOf: Human\nDisjointWith: Animal");
 
         // Act
         service.updateTaskGroup(taskGroup, dto);
 
         // Assert
-        assertEquals(dto.additionalData().minNumber(), taskGroup.getMinNumber());
-        assertEquals(dto.additionalData().maxNumber(), taskGroup.getMaxNumber());
+        assertEquals(dto.additionalData().solution(), taskGroup.getSolution());
     }
 
     @Test
     void updateTaskGroupInvalidType() {
         // Arrange
-        ModifyTaskGroupDto<ModifyOWLTaskGroupDto> dto = new ModifyTaskGroupDto<>("sql", TaskStatus.APPROVED, new ModifyOWLTaskGroupDto(1, 2));
+        ModifyTaskGroupDto<ModifyOWLTaskGroupDto> dto = new ModifyTaskGroupDto<>("sql", TaskStatus.APPROVED, new ModifyOWLTaskGroupDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal"));
         OWLTaskGroupService service = new OWLTaskGroupService(null, null);
-        var taskGroup = new OWLTaskGroup(3, 4);
+        var taskGroup = new OWLTaskGroup(TaskStatus.APPROVED, "Class: Person\nSubClassOf: Human\nDisjointWith: Animal");
 
         // Act & Assert
         assertThrows(ResponseStatusException.class, () -> service.updateTaskGroup(taskGroup, dto));
@@ -71,15 +69,15 @@ class OWLTaskGroupServiceTest {
         // Arrange
         MessageSource ms = mock(MessageSource.class);
         OWLTaskGroupService service = new OWLTaskGroupService(null, ms);
-        var taskGroup = new OWLTaskGroup(3, 4);
+        var taskGroup = new OWLTaskGroup(TaskStatus.APPROVED, "Class: Person\nSubClassOf: Human\nDisjointWith: Animal");
 
         // Act
         var result = service.mapToReturnData(taskGroup, true);
 
         // Assert
         assertNotNull(result);
-        verify(ms).getMessage("defaultTaskGroupDescription", new Object[]{taskGroup.getMinNumber(), taskGroup.getMaxNumber()}, Locale.GERMAN);
-        verify(ms).getMessage("defaultTaskGroupDescription", new Object[]{taskGroup.getMinNumber(), taskGroup.getMaxNumber()}, Locale.ENGLISH);
+        verify(ms).getMessage("defaultTaskGroupDescription", new Object[]{taskGroup.getSolution()}, Locale.GERMAN);
+        verify(ms).getMessage("defaultTaskGroupDescription", new Object[]{taskGroup.getSolution()}, Locale.ENGLISH);
     }
 
 }

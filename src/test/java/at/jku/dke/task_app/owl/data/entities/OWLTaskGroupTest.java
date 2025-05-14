@@ -10,36 +10,30 @@ class OWLTaskGroupTest {
     @Test
     void testConstructor1() {
         // Arrange
-        final int expectedMinNumber = 21;
-        final int expectedMaxNumber = 42;
+        final String expectedSolution = "Class: Person\nSubClassOf: Human\nDisjointWith: Animal";
 
         // Act
-        OWLTaskGroup OWLTaskGroup = new OWLTaskGroup(expectedMinNumber, expectedMaxNumber);
-        int actualMinNumber = OWLTaskGroup.getMinNumber();
-        int actualMaxNumber = OWLTaskGroup.getMaxNumber();
+        OWLTaskGroup OWLTaskGroup = new OWLTaskGroup(expectedSolution);
+        String actualSolution = OWLTaskGroup.getSolution();
 
         // Assert
-        assertEquals(expectedMinNumber, actualMinNumber);
-        assertEquals(expectedMaxNumber, actualMaxNumber);
+        assertEquals(expectedSolution, actualSolution);
     }
 
     @Test
     void testConstructor2() {
         // Arrange
         final TaskStatus status = TaskStatus.APPROVED;
-        final int expectedMinNumber = 21;
-        final int expectedMaxNumber = 42;
+        final String expectedSolution = "Class: Person\nSubClassOf: Human\nDisjointWith: Animal";
 
         // Act
-        OWLTaskGroup OWLTaskGroup = new OWLTaskGroup(status, expectedMinNumber, expectedMaxNumber);
+        OWLTaskGroup OWLTaskGroup = new OWLTaskGroup(status, expectedSolution);
         TaskStatus actualStatus = OWLTaskGroup.getStatus();
-        int actualMinNumber = OWLTaskGroup.getMinNumber();
-        int actualMaxNumber = OWLTaskGroup.getMaxNumber();
+        String actualSolution = OWLTaskGroup.getSolution();
 
         // Assert
         assertEquals(status, actualStatus);
-        assertEquals(expectedMinNumber, actualMinNumber);
-        assertEquals(expectedMaxNumber, actualMaxNumber);
+        assertEquals(expectedSolution, actualSolution);
     }
 
     @Test
@@ -47,49 +41,31 @@ class OWLTaskGroupTest {
         // Arrange
         final long expectedId = 21;
         final TaskStatus status = TaskStatus.APPROVED;
-        final int expectedMinNumber = 21;
-        final int expectedMaxNumber = 42;
+        final String expectedSolution = "Class: Person\nSubClassOf: Human\nDisjointWith: Animal";
 
         // Act
-        OWLTaskGroup OWLTaskGroup = new OWLTaskGroup(expectedId, status, expectedMinNumber, expectedMaxNumber);
+        OWLTaskGroup OWLTaskGroup = new OWLTaskGroup(expectedId, status, expectedSolution);
         long actualId = OWLTaskGroup.getId();
         TaskStatus actualStatus = OWLTaskGroup.getStatus();
-        int actualMinNumber = OWLTaskGroup.getMinNumber();
-        int actualMaxNumber = OWLTaskGroup.getMaxNumber();
+        String actualSolution = OWLTaskGroup.getSolution();
 
         // Assert
         assertEquals(expectedId, actualId);
         assertEquals(status, actualStatus);
-        assertEquals(expectedMinNumber, actualMinNumber);
-        assertEquals(expectedMaxNumber, actualMaxNumber);
+        assertEquals(expectedSolution, actualSolution);
     }
 
     @Test
-    void testGetSetMinNumber() {
+    void testGetSetSolution() {
         // Arrange
         OWLTaskGroup OWLTaskGroup = new OWLTaskGroup();
-        final int expected = 21;
+        final String expected = "Class: Person\nSubClassOf: Human\nDisjointWith: Animal";
 
         // Act
-        OWLTaskGroup.setMinNumber(expected);
-        int actual = OWLTaskGroup.getMinNumber();
+        OWLTaskGroup.setSolution(expected);
+        String actual = OWLTaskGroup.getSolution();
 
         // Assert
         assertEquals(expected, actual);
     }
-
-    @Test
-    void testGetSetMaxNumber() {
-        // Arrange
-        OWLTaskGroup OWLTaskGroup = new OWLTaskGroup();
-        final int expected = 21;
-
-        // Act
-        OWLTaskGroup.setMaxNumber(expected);
-        int actual = OWLTaskGroup.getMaxNumber();
-
-        // Assert
-        assertEquals(expected, actual);
-    }
-
 }

@@ -12,11 +12,11 @@ class OWLTaskTest {
     @Test
     void testConstructor1() {
         // Arrange
-        final int expected = 42;
+        final String expected = "Class: Car\nSubClassOf: Vehicle\nDisjointWith: Bike";
 
         // Act
         var task = new OWLTask(expected);
-        int actual = task.getSolution();
+        String actual = task.getSolution();
 
         // Assert
         assertEquals(expected, actual);
@@ -25,7 +25,7 @@ class OWLTaskTest {
     @Test
     void testConstructor2() {
         // Arrange
-        final int expected = 42;
+        final String expected = "Class: Car\nSubClassOf: Vehicle\nDisjointWith: Bike";
         final BigDecimal maxPoints = BigDecimal.TEN;
         final TaskStatus status = TaskStatus.APPROVED;
         final OWLTaskGroup taskGroup = new OWLTaskGroup();
@@ -33,7 +33,7 @@ class OWLTaskTest {
 
         // Act
         var task = new OWLTask(maxPoints, status, taskGroup, expected);
-        int actualSolution = task.getSolution();
+        String actualSolution = task.getSolution();
         BigDecimal actualMaxPoints = task.getMaxPoints();
         TaskStatus actualStatus = task.getStatus();
         OWLTaskGroup actualTaskGroup = task.getTaskGroup();
@@ -48,7 +48,7 @@ class OWLTaskTest {
     @Test
     void testConstructor3() {
         // Arrange
-        final int expected = 42;
+        final String expected = "Class: Car\nSubClassOf: Vehicle\nDisjointWith: Bike";
         final BigDecimal maxPoints = BigDecimal.TEN;
         final TaskStatus status = TaskStatus.APPROVED;
         final OWLTaskGroup taskGroup = new OWLTaskGroup();
@@ -58,7 +58,7 @@ class OWLTaskTest {
         // Act
         var task = new OWLTask(id, maxPoints, status, taskGroup, expected);
         long actualId = task.getId();
-        int actualSolution = task.getSolution();
+        String actualSolution = task.getSolution();
         BigDecimal actualMaxPoints = task.getMaxPoints();
         TaskStatus actualStatus = task.getStatus();
         OWLTaskGroup actualTaskGroup = task.getTaskGroup();
@@ -75,11 +75,11 @@ class OWLTaskTest {
     void testGetSetSolution() {
         // Arrange
         var task = new OWLTask();
-        final int expected = 42;
+        final String expected = "Class: Car\nSubClassOf: Vehicle\nDisjointWith: Bike";
 
         // Act
         task.setSolution(expected);
-        final int actual = task.getSolution();
+        final String actual = task.getSolution();
 
         // Assert
         assertEquals(expected, actual);

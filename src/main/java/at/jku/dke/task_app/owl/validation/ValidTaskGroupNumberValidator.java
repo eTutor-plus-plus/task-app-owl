@@ -16,6 +16,6 @@ public class ValidTaskGroupNumberValidator implements ConstraintValidator<ValidT
 
     @Override
     public boolean isValid(ModifyOWLTaskGroupDto value, ConstraintValidatorContext context) {
-        return value.minNumber() < value.maxNumber();
+        return true;
     }
 }

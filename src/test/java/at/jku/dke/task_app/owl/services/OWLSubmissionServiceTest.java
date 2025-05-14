@@ -16,7 +16,7 @@ class OWLSubmissionServiceTest {
     @Test
     void createSubmissionEntity() {
         // Arrange
-        SubmitSubmissionDto<OWLSubmissionDto> dto = new SubmitSubmissionDto<>("test-user", "test-quiz", 3L, "de", SubmissionMode.SUBMIT, 2, new OWLSubmissionDto("33"));
+        SubmitSubmissionDto<OWLSubmissionDto> dto = new SubmitSubmissionDto<>("test-user", "test-quiz", 3L, "de", SubmissionMode.SUBMIT, 2, new OWLSubmissionDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal"));
         OWLSubmissionService service = new OWLSubmissionService(null, null, null);
 
         // Act
@@ -29,7 +29,7 @@ class OWLSubmissionServiceTest {
     @Test
     void mapSubmissionToSubmissionData() {
         // Arrange
-        OWLSubmission submission = new OWLSubmission("33");
+        OWLSubmission submission = new OWLSubmission("Class: Person\nSubClassOf: Human\nDisjointWith: Animal");
         OWLSubmissionService service = new OWLSubmissionService(null, null, null);
 
         // Act
@@ -43,11 +43,7 @@ class OWLSubmissionServiceTest {
     void evaluate() {
         // Arrange
         var evalService = mock(EvaluationService.class);
-        SubmitSubmissionDto<OWLSubmissionDto> dto = new SubmitSubmissionDto<>("test-user", "test-quiz", 3L, "de", SubmissionMode.SUBMIT, 2, new OWLSubmissionDto("33"));
-        OWLSubmissionService service = new OWLSubmissionService(null, null, evalService);
-
-        // Act
-        var result = service.evaluate(dto);
+        SubmitSubmissionDto<OWLSubmissionDto> dto = new SubmitSubmissionDto<>("test-user", "test-quiz", 3L, "de", SubmissionMode.SUBMIT, 2, new OWLSubmissionDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal"));
 
         // Assert
         verify(evalService).evaluate(dto);

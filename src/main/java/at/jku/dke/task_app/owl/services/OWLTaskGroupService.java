@@ -34,23 +34,22 @@ public class OWLTaskGroupService extends BaseTaskGroupService<OWLTaskGroup, Modi
 
     @Override
     protected OWLTaskGroup createTaskGroup(long id, ModifyTaskGroupDto<ModifyOWLTaskGroupDto> modifyTaskGroupDto) {
-        if (!modifyTaskGroupDto.taskGroupType().equals("binary-search"))
+        if (!modifyTaskGroupDto.taskGroupType().equals("owl"))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid task group type.");
-        return new OWLTaskGroup(modifyTaskGroupDto.additionalData().minNumber(), modifyTaskGroupDto.additionalData().maxNumber());
+        return new OWLTaskGroup(modifyTaskGroupDto.additionalData().solution());
     }
 
     @Override
     protected void updateTaskGroup(OWLTaskGroup taskGroup, ModifyTaskGroupDto<ModifyOWLTaskGroupDto> modifyTaskGroupDto) {
-        if (!modifyTaskGroupDto.taskGroupType().equals("binary-search"))
+        if (!modifyTaskGroupDto.taskGroupType().equals("owl"))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid task group type.");
-        taskGroup.setMinNumber(modifyTaskGroupDto.additionalData().minNumber());
-        taskGroup.setMaxNumber(modifyTaskGroupDto.additionalData().maxNumber());
+        taskGroup.setSolution(modifyTaskGroupDto.additionalData().solution());
     }
 
     @Override
     protected TaskGroupModificationResponseDto mapToReturnData(OWLTaskGroup taskGroup, boolean create) {
         return new TaskGroupModificationResponseDto(
-            this.messageSource.getMessage("defaultTaskGroupDescription", new Object[]{taskGroup.getMinNumber(), taskGroup.getMaxNumber()}, Locale.GERMAN),
-            this.messageSource.getMessage("defaultTaskGroupDescription", new Object[]{taskGroup.getMinNumber(), taskGroup.getMaxNumber()}, Locale.ENGLISH));
+            this.messageSource.getMessage("defaultTaskGroupDescription", new Object[]{taskGroup.getSolution()}, Locale.GERMAN),
+            this.messageSource.getMessage("defaultTaskGroupDescription", new Object[]{taskGroup.getSolution()}, Locale.ENGLISH));
     }
 }

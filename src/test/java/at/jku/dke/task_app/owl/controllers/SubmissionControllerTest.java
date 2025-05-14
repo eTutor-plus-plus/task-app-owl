@@ -57,14 +57,14 @@ class SubmissionControllerTest {
     void initDb() {
         this.repository.deleteAll();
 
-        var group = this.groupRepository.save(new OWLTaskGroup(1L, TaskStatus.APPROVED, 1, 10));
-        var task = this.repository.save(new OWLTask(1L, BigDecimal.TWO, TaskStatus.APPROVED, group, 5));
+        var group = this.groupRepository.save(new OWLTaskGroup(1L, TaskStatus.APPROVED, "Class: Person\nSubClassOf: Human\nDisjointWith: Animal"));
+        var task = this.repository.save(new OWLTask(1L, BigDecimal.TWO, TaskStatus.APPROVED, group, "Class: Person\nSubClassOf: Human\nDisjointWith: Animal"));
         this.taskId = task.getId();
 
-        var submission = new OWLSubmission("test-user", "test-id", task, "de", 3, SubmissionMode.SUBMIT, "5");
+        var submission = new OWLSubmission("test-user", "test-id", task, "de", 3, SubmissionMode.SUBMIT, "Class: Person\nSubClassOf: Human\nDisjointWith: Animal");
         submission.setEvaluationResult(new GradingDto(BigDecimal.TWO, BigDecimal.TWO, "success", new ArrayList<>()));
         this.graded = this.submissionRepository.save(submission).getId();
-        this.ungraded = this.submissionRepository.save(new OWLSubmission("test-user", "test-id", task, "de", 3, SubmissionMode.SUBMIT, "5")).getId();
+        this.ungraded = this.submissionRepository.save(new OWLSubmission("test-user", "test-id", task, "de", 3, SubmissionMode.SUBMIT, "Class: Person\nSubClassOf: Human\nDisjointWith: Animal")).getId();
     }
 
     //#region --- SUBMIT ---
@@ -74,7 +74,7 @@ class SubmissionControllerTest {
             .port(port)
             .header(AuthConstants.AUTH_TOKEN_HEADER_NAME, ClientSetupExtension.SUBMIT_API_KEY)
             .contentType(ContentType.JSON)
-            .body(new SubmitSubmissionDto<>("test-user", "test-id", this.taskId, "de", SubmissionMode.SUBMIT, 3, new OWLSubmissionDto("2")))
+            .body(new SubmitSubmissionDto<>("test-user", "test-id", this.taskId, "de", SubmissionMode.SUBMIT, 3, new OWLSubmissionDto("Class: Person\nSubClassOf: Animal\nDisjointWith: Human")))
             // WHEN
             .when()
             .post("/api/submission")
@@ -98,7 +98,7 @@ class SubmissionControllerTest {
             .header(AuthConstants.AUTH_TOKEN_HEADER_NAME, ClientSetupExtension.SUBMIT_API_KEY)
             .queryParams("persist", false)
             .contentType(ContentType.JSON)
-            .body(new SubmitSubmissionDto<>("test-user", "test-id", this.taskId, "de", SubmissionMode.SUBMIT, 3, new OWLSubmissionDto("5")))
+            .body(new SubmitSubmissionDto<>("test-user", "test-id", this.taskId, "de", SubmissionMode.SUBMIT, 3, new OWLSubmissionDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal")))
             // WHEN
             .when()
             .post("/api/submission")
@@ -121,7 +121,7 @@ class SubmissionControllerTest {
             .header(AuthConstants.AUTH_TOKEN_HEADER_NAME, ClientSetupExtension.SUBMIT_API_KEY)
             .contentType(ContentType.JSON)
             .queryParams("runInBackground", true)
-            .body(new SubmitSubmissionDto<>("test-user", "test-id", this.taskId, "de", SubmissionMode.SUBMIT, 3, new OWLSubmissionDto("5")))
+            .body(new SubmitSubmissionDto<>("test-user", "test-id", this.taskId, "de", SubmissionMode.SUBMIT, 3, new OWLSubmissionDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal")))
             // WHEN
             .when()
             .post("/api/submission")
@@ -141,7 +141,7 @@ class SubmissionControllerTest {
             .port(port)
             .header(AuthConstants.AUTH_TOKEN_HEADER_NAME, ClientSetupExtension.SUBMIT_API_KEY)
             .contentType(ContentType.JSON)
-            .body(new SubmitSubmissionDto<>("test-user", "test-id", this.taskId, "it", SubmissionMode.SUBMIT, 3, new OWLSubmissionDto("5")))
+            .body(new SubmitSubmissionDto<>("test-user", "test-id", this.taskId, "it", SubmissionMode.SUBMIT, 3, new OWLSubmissionDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal")))
             // WHEN
             .when()
             .post("/api/submission")
@@ -156,7 +156,7 @@ class SubmissionControllerTest {
             .port(port)
             .header(AuthConstants.AUTH_TOKEN_HEADER_NAME, ClientSetupExtension.SUBMIT_API_KEY)
             .contentType(ContentType.JSON)
-            .body(new SubmitSubmissionDto<>("test-user", "test-id", this.taskId + 1, "de", SubmissionMode.SUBMIT, 3, new OWLSubmissionDto("5")))
+            .body(new SubmitSubmissionDto<>("test-user", "test-id", this.taskId + 1, "de", SubmissionMode.SUBMIT, 3, new OWLSubmissionDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal")))
             // WHEN
             .when()
             .post("/api/submission")
@@ -172,7 +172,7 @@ class SubmissionControllerTest {
             .port(port)
             .header(AuthConstants.AUTH_TOKEN_HEADER_NAME, ClientSetupExtension.CRUD_API_KEY)
             .contentType(ContentType.JSON)
-            .body(new SubmitSubmissionDto<>("test-user", "test-id", this.taskId, "de", SubmissionMode.SUBMIT, 3, new OWLSubmissionDto("5")))
+            .body(new SubmitSubmissionDto<>("test-user", "test-id", this.taskId, "de", SubmissionMode.SUBMIT, 3, new OWLSubmissionDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal")))
             // WHEN
             .when()
             .post("/api/submission")
@@ -190,7 +190,7 @@ class SubmissionControllerTest {
                     .port(port)
                     .header(AuthConstants.AUTH_TOKEN_HEADER_NAME, ClientSetupExtension.SUBMIT_API_KEY)
                     .contentType(ContentType.JSON)
-                    .body(new SubmitSubmissionDto<>("test-user-" + i, "test-id", this.taskId, "de", SubmissionMode.SUBMIT, 3, new OWLSubmissionDto("5")))
+                    .body(new SubmitSubmissionDto<>("test-user-" + i, "test-id", this.taskId, "de", SubmissionMode.SUBMIT, 3, new OWLSubmissionDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal")))
                     // WHEN
                     .when()
                     .post("/api/submission")

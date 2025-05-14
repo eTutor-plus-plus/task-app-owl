@@ -41,11 +41,11 @@ logging:
   include-application-name: false
   logback:
     rollingpolicy:
-      file-name-pattern: logs/task-app-binary-search.%d{yyyy-MM-dd}.%i.log
+      file-name-pattern: logs/task-app-owl.%d{yyyy-MM-dd}.%i.log
       max-file-size: 50MB
       max-history: 14
   file:
-    name: logs/task-app-binary-search.log
+    name: logs/task-app-owl.log
 
 # Actuator
 management:

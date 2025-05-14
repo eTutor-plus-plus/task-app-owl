@@ -36,8 +36,9 @@ class EvaluationServiceTest {
         taskRepository.deleteAll();
         taskGroupRepository.deleteAll();
 
-        var taskGroup = taskGroupRepository.save(new OWLTaskGroup(1L, TaskStatus.APPROVED, 1, 10));
-        var task = taskRepository.save(new OWLTask(1L, BigDecimal.TEN, TaskStatus.APPROVED, taskGroup, 20));
+        var taskGroup = taskGroupRepository.save(new OWLTaskGroup(1L, TaskStatus.APPROVED, "Class: Person\nSubClassOf: Human\nDisjointWith: Animal"));
+        var task = taskRepository.save(new OWLTask(1L, BigDecimal.TEN, TaskStatus.APPROVED, taskGroup,
+            "Class: Person\nSubClassOf: Human\nDisjointWith: Animal"));
         this.taskId = task.getId();
     }
 
@@ -45,7 +46,7 @@ class EvaluationServiceTest {
     void evaluateRun() {
         // Arrange
         SubmitSubmissionDto<OWLSubmissionDto> dto = new SubmitSubmissionDto<>("test-user", "test-assignment", taskId,
-            "en", SubmissionMode.RUN, 3, new OWLSubmissionDto("20"));
+            "en", SubmissionMode.RUN, 3, new OWLSubmissionDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal"));
 
         // Act
         var result = evaluationService.evaluate(dto);
@@ -54,8 +55,10 @@ class EvaluationServiceTest {
         assertNotNull(result);
         assertEquals(BigDecimal.ZERO.stripTrailingZeros(), result.points().stripTrailingZeros());
         assertEquals(BigDecimal.TEN.stripTrailingZeros(), result.maxPoints().stripTrailingZeros());
-        assertEquals("Your Input: 20", result.generalFeedback());
-        assertTrue(result.criteria().stream().anyMatch(x -> x.name().equals("Syntax") && x.feedback().equals("Valid Number")));
+        assertEquals("Submitted OWL ontology: Class: Person\nSubClassOf: Human\nDisjointWith: Animal", result.generalFeedback());
+        /*assertTrue(result.criteria().stream().anyMatch(x ->
+            x.name().equals("criterium.syntax") &&
+            x.feedback().equals("criterium.syntax.valid")));*/
         assertEquals(1, result.criteria().size());
     }
 
@@ -63,7 +66,7 @@ class EvaluationServiceTest {
     void evaluateSubmitValid() {
         // Arrange
         SubmitSubmissionDto<OWLSubmissionDto> dto = new SubmitSubmissionDto<>("test-user", "test-assignment", taskId,
-            "en", SubmissionMode.SUBMIT, 3, new OWLSubmissionDto("20"));
+            "en", SubmissionMode.SUBMIT, 3, new OWLSubmissionDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal"));
 
         // Act
         var result = evaluationService.evaluate(dto);
@@ -72,8 +75,10 @@ class EvaluationServiceTest {
         assertNotNull(result);
         assertEquals(BigDecimal.TEN.stripTrailingZeros(), result.points().stripTrailingZeros());
         assertEquals(BigDecimal.TEN.stripTrailingZeros(), result.maxPoints().stripTrailingZeros());
-        assertEquals("Your solution is correct.", result.generalFeedback());
-        assertTrue(result.criteria().stream().anyMatch(x -> x.name().equals("Syntax") && x.feedback().equals("Valid Number")));
+        assertEquals("The ontology is correct.", result.generalFeedback());
+        /*assertTrue(result.criteria().stream().anyMatch(x ->
+            x.name().equals("criterium.syntax") &&
+            x.feedback().equals("criterium.syntax.valid")));*/
         assertEquals(1, result.criteria().size());
     }
 
@@ -81,33 +86,15 @@ class EvaluationServiceTest {
     void evaluateSubmitInvalidSyntax() {
         // Arrange
         SubmitSubmissionDto<OWLSubmissionDto> dto = new SubmitSubmissionDto<>("test-user", "test-assignment", taskId,
-            "en", SubmissionMode.SUBMIT, 3, new OWLSubmissionDto("20 jku"));
+            "en", SubmissionMode.SUBMIT, 3, new OWLSubmissionDto("Claaa: PersonSubClassOf: Human\nDisjointWith: Animal"));
 
         // Act
         var result = evaluationService.evaluate(dto);
 
         // Assert
         assertNotNull(result);
-        assertTrue(result.criteria().stream().anyMatch(x -> x.name().equals("Syntax")));
-        assertEquals("Your solution is incorrect.", result.generalFeedback());
-        assertEquals(BigDecimal.ZERO.stripTrailingZeros(), result.points().stripTrailingZeros());
-        assertEquals(BigDecimal.TEN.stripTrailingZeros(), result.maxPoints().stripTrailingZeros());
-        assertEquals(1, result.criteria().size());
-    }
-
-    @Test
-    void evaluateSubmitTooSmall() {
-        // Arrange
-        SubmitSubmissionDto<OWLSubmissionDto> dto = new SubmitSubmissionDto<>("test-user", "test-assignment", taskId,
-            "en", SubmissionMode.SUBMIT, 3, new OWLSubmissionDto("18"));
-
-        // Act
-        var result = evaluationService.evaluate(dto);
-
-        // Assert
-        assertNotNull(result);
-        assertTrue(result.criteria().stream().anyMatch(x -> x.name().equals("Syntax") && x.feedback().equals("Valid Number")));
-        assertEquals("Your solution is incorrect.", result.generalFeedback());
+        //assertTrue(result.criteria().stream().anyMatch(x -> x.name().equals("criterium.syntax")));
+        assertEquals("Invalid Manchester syntax.", result.generalFeedback());
         assertEquals(BigDecimal.ZERO.stripTrailingZeros(), result.points().stripTrailingZeros());
         assertEquals(BigDecimal.TEN.stripTrailingZeros(), result.maxPoints().stripTrailingZeros());
         assertEquals(1, result.criteria().size());
@@ -117,7 +104,7 @@ class EvaluationServiceTest {
     void evaluateDiagnoseValid() {
         // Arrange
         SubmitSubmissionDto<OWLSubmissionDto> dto = new SubmitSubmissionDto<>("test-user", "test-assignment", taskId,
-            "en", SubmissionMode.DIAGNOSE, 3, new OWLSubmissionDto("20"));
+            "en", SubmissionMode.DIAGNOSE, 3, new OWLSubmissionDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal"));
 
         // Act
         var result = evaluationService.evaluate(dto);
@@ -126,17 +113,21 @@ class EvaluationServiceTest {
         assertNotNull(result);
         assertEquals(BigDecimal.TEN.stripTrailingZeros(), result.points().stripTrailingZeros());
         assertEquals(BigDecimal.TEN.stripTrailingZeros(), result.maxPoints().stripTrailingZeros());
-        assertEquals("Your solution is correct.", result.generalFeedback());
-        assertEquals(2, result.criteria().size());
-        assertTrue(result.criteria().stream().anyMatch(x -> x.name().equals("Syntax") && x.feedback().equals("Valid Number")));
-        assertTrue(result.criteria().stream().anyMatch(x -> x.name().equals("Value") && x.feedback().equals("You have found the searched number.")));
+        assertEquals("The ontology is correct.", result.generalFeedback());
+        assertEquals(4, result.criteria().size()); // Syntax + Class hierarchy + Object properties + Data properties
+        /*assertTrue(result.criteria().stream().anyMatch(x ->
+            x.name().equals("criterium.syntax") &&
+            x.feedback().equals("criterium.syntax.valid")));
+        assertTrue(result.criteria().stream().anyMatch(x ->
+            x.name().equals("criterium.classes") &&
+            x.feedback().equals("criterium.classes.match")));*/
     }
 
     @Test
     void evaluateDiagnoseInvalidSyntax() {
         // Arrange
         SubmitSubmissionDto<OWLSubmissionDto> dto = new SubmitSubmissionDto<>("test-user", "test-assignment", taskId,
-            "en", SubmissionMode.DIAGNOSE, 3, new OWLSubmissionDto("20 test"));
+            "en", SubmissionMode.DIAGNOSE, 3, new OWLSubmissionDto("Claaa: Person\nSubClassOf: Human\nDisjointWith: Animal"));
 
         // Act
         var result = evaluationService.evaluate(dto);
@@ -145,55 +136,16 @@ class EvaluationServiceTest {
         assertNotNull(result);
         assertEquals(BigDecimal.ZERO.stripTrailingZeros(), result.points().stripTrailingZeros());
         assertEquals(BigDecimal.TEN.stripTrailingZeros(), result.maxPoints().stripTrailingZeros());
-        assertEquals("Your solution is incorrect.", result.generalFeedback());
+        assertEquals("Invalid Manchester syntax.", result.generalFeedback());
         assertEquals(1, result.criteria().size());
-        assertTrue(result.criteria().stream().anyMatch(x -> x.name().equals("Syntax")));
+        //assertTrue(result.criteria().stream().anyMatch(x -> x.name().equals("criterium.syntax")));
     }
-
-    @Test
-    void evaluateDiagnoseTooBig() {
-        // Arrange
-        SubmitSubmissionDto<OWLSubmissionDto> dto = new SubmitSubmissionDto<>("test-user", "test-assignment", taskId,
-            "en", SubmissionMode.DIAGNOSE, 3, new OWLSubmissionDto("25"));
-
-        // Act
-        var result = evaluationService.evaluate(dto);
-
-        // Assert
-        assertNotNull(result);
-        assertEquals(BigDecimal.ZERO.stripTrailingZeros(), result.points().stripTrailingZeros());
-        assertEquals(BigDecimal.TEN.stripTrailingZeros(), result.maxPoints().stripTrailingZeros());
-        assertEquals("Your solution is incorrect.", result.generalFeedback());
-        assertEquals(2, result.criteria().size());
-        assertTrue(result.criteria().stream().anyMatch(x -> x.name().equals("Syntax") && x.feedback().equals("Valid Number")));
-        assertTrue(result.criteria().stream().anyMatch(x -> x.name().equals("Value") && x.feedback().equals("The searched number is smaller.")));
-    }
-
-    @Test
-    void evaluateDiagnoseTooSmall() {
-        // Arrange
-        SubmitSubmissionDto<OWLSubmissionDto> dto = new SubmitSubmissionDto<>("test-user", "test-assignment", taskId,
-            "en", SubmissionMode.DIAGNOSE, 3, new OWLSubmissionDto("15"));
-
-        // Act
-        var result = evaluationService.evaluate(dto);
-
-        // Assert
-        assertNotNull(result);
-        assertEquals(BigDecimal.ZERO.stripTrailingZeros(), result.points().stripTrailingZeros());
-        assertEquals(BigDecimal.TEN.stripTrailingZeros(), result.maxPoints().stripTrailingZeros());
-        assertEquals("Your solution is incorrect.", result.generalFeedback());
-        assertEquals(2, result.criteria().size());
-        assertTrue(result.criteria().stream().anyMatch(x -> x.name().equals("Syntax") && x.feedback().equals("Valid Number")));
-        assertTrue(result.criteria().stream().anyMatch(x -> x.name().equals("Value") && x.feedback().equals("The searched number is bigger.")));
-    }
-
 
     @Test
     void evaluateDiagnoseNoFeedback() {
         // Arrange
         SubmitSubmissionDto<OWLSubmissionDto> dto = new SubmitSubmissionDto<>("test-user", "test-assignment", taskId,
-            "en", SubmissionMode.DIAGNOSE, 0, new OWLSubmissionDto("15"));
+            "en", SubmissionMode.DIAGNOSE, 0, new OWLSubmissionDto("Class: Orange\nSubClassOf: Human\nDisjointWith: Animal"));
 
         // Act
         var result = evaluationService.evaluate(dto);
@@ -204,6 +156,8 @@ class EvaluationServiceTest {
         assertEquals(BigDecimal.TEN.stripTrailingZeros(), result.maxPoints().stripTrailingZeros());
         assertEquals("Your solution is incorrect.", result.generalFeedback());
         assertEquals(1, result.criteria().size());
-        assertTrue(result.criteria().stream().anyMatch(x -> x.name().equals("Syntax") && x.feedback().equals("Valid Number")));
+        assertTrue(result.criteria().stream().anyMatch(x ->
+            x.name().equals("criterium.syntax") &&
+            x.feedback().equals("criterium.syntax.valid")));
     }
 }

@@ -8,8 +8,7 @@ import java.io.Serializable;
 /**
  * DTO for {@link OWLTaskGroup}
  *
- * @param minNumber The minimum number.
- * @param maxNumber The maximum number.
+ * @param solution The solution in Manchester syntax.
  */
-public record OWLTaskGroupDto(@NotNull Integer minNumber, @NotNull Integer maxNumber) implements Serializable {
+public record OWLTaskGroupDto(@NotNull String solution) implements Serializable {
 }

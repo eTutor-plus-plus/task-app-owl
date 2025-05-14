@@ -37,14 +37,14 @@ public class OWLTaskService extends BaseTaskInGroupService<OWLTask, OWLTaskGroup
 
     @Override
     protected OWLTask createTask(long id, ModifyTaskDto<ModifyOWLTaskDto> modifyTaskDto) {
-        if (!modifyTaskDto.taskType().equals("binary-search"))
+        if (!modifyTaskDto.taskType().equals("owl"))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid task type.");
         return new OWLTask(modifyTaskDto.additionalData().solution());
     }
 
     @Override
     protected void updateTask(OWLTask task, ModifyTaskDto<ModifyOWLTaskDto> modifyTaskDto) {
-        if (!modifyTaskDto.taskType().equals("binary-search"))
+        if (!modifyTaskDto.taskType().equals("owl"))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid task type.");
         task.setSolution(modifyTaskDto.additionalData().solution());
     }

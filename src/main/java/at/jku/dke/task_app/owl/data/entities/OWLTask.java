@@ -6,18 +6,21 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 
 /**
- * Represents an owl task.
+ * Represents an OWL task that contains a solution ontology in Manchester syntax.
  */
 @Entity
 @Table(name = "task")
 public class OWLTask extends BaseTaskInGroup<OWLTaskGroup> {
+
     @NotNull
-    @Column(name = "solution", nullable = false)
-    private Integer solution;
+    @Size(max = 10000)
+    @Column(name = "solution", nullable = false, length = 10000)
+    private String solution;
 
     /**
      * Creates a new instance of class {@link OWLTask}.
@@ -28,9 +31,9 @@ public class OWLTask extends BaseTaskInGroup<OWLTaskGroup> {
     /**
      * Creates a new instance of class {@link OWLTask}.
      *
-     * @param solution The solution.
+     * @param solution The solution ontology in Manchester syntax.
      */
-    public OWLTask(Integer solution) {
+    public OWLTask(String solution) {
         this.solution = solution;
     }
 
@@ -40,9 +43,9 @@ public class OWLTask extends BaseTaskInGroup<OWLTaskGroup> {
      * @param maxPoints The maximum points.
      * @param status    The status.
      * @param taskGroup The task group.
-     * @param solution  The solution.
+     * @param solution  The solution ontology in Manchester syntax.
      */
-    public OWLTask(BigDecimal maxPoints, TaskStatus status, OWLTaskGroup taskGroup, Integer solution) {
+    public OWLTask(BigDecimal maxPoints, TaskStatus status, OWLTaskGroup taskGroup, String solution) {
         super(maxPoints, status, taskGroup);
         this.solution = solution;
     }
@@ -54,28 +57,28 @@ public class OWLTask extends BaseTaskInGroup<OWLTaskGroup> {
      * @param maxPoints The maximum points.
      * @param status    The status.
      * @param taskGroup The task group.
-     * @param solution  The solution.
+     * @param solution  The solution ontology in Manchester syntax.
      */
-    public OWLTask(Long id, BigDecimal maxPoints, TaskStatus status, OWLTaskGroup taskGroup, Integer solution) {
+    public OWLTask(Long id, BigDecimal maxPoints, TaskStatus status, OWLTaskGroup taskGroup, String solution) {
         super(id, maxPoints, status, taskGroup);
         this.solution = solution;
     }
 
     /**
-     * Gets the solution.
+     * Gets the solution ontology in Manchester syntax.
      *
-     * @return The solution.
+     * @return The solution ontology.
      */
-    public Integer getSolution() {
+    public String getSolution() {
         return solution;
     }
 
     /**
-     * Sets the solution.
+     * Sets the solution ontology in Manchester syntax.
      *
-     * @param solution The solution.
+     * @param solution The solution ontology.
      */
-    public void setSolution(Integer solution) {
+    public void setSolution(String solution) {
         this.solution = solution;
     }
 }
