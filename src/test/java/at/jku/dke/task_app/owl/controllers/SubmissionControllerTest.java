@@ -57,7 +57,7 @@ class SubmissionControllerTest {
     void initDb() {
         this.repository.deleteAll();
 
-        var group = this.groupRepository.save(new OWLTaskGroup(1L, TaskStatus.APPROVED, "Class: Person\nSubClassOf: Human\nDisjointWith: Animal"));
+        var group = this.groupRepository.save(new OWLTaskGroup(1L, TaskStatus.APPROVED));
         var task = this.repository.save(new OWLTask(1L, BigDecimal.TWO, TaskStatus.APPROVED, group, "Class: Person\nSubClassOf: Human\nDisjointWith: Animal"));
         this.taskId = task.getId();
 

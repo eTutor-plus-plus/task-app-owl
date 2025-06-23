@@ -19,7 +19,6 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ExtendWith({DatabaseSetupExtension.class, ClientSetupExtension.class})
@@ -36,7 +35,7 @@ class TaskGroupControllerTest {
     @BeforeEach
     void initDb() {
         this.repository.deleteAll();
-        this.taskGroupId = this.repository.save(new OWLTaskGroup(1L, TaskStatus.APPROVED, "Class: Person\nSubClassOf: Human\nDisjointWith: Animal")).getId();
+        this.taskGroupId = this.repository.save(new OWLTaskGroup(1L, TaskStatus.APPROVED)).getId();
     }
 
     //#region --- GET ---
@@ -95,7 +94,7 @@ class TaskGroupControllerTest {
             .port(port)
             .header(AuthConstants.AUTH_TOKEN_HEADER_NAME, ClientSetupExtension.CRUD_API_KEY)
             .contentType(ContentType.JSON)
-            .body(new ModifyTaskGroupDto<>("owl", TaskStatus.APPROVED, new ModifyOWLTaskGroupDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal")))
+            .body(new ModifyTaskGroupDto<>("owl", TaskStatus.APPROVED, new ModifyOWLTaskGroupDto()))
             // WHEN
             .when()
             .post("/api/taskGroup/{id}", this.taskGroupId + 2)
@@ -115,7 +114,7 @@ class TaskGroupControllerTest {
             .port(port)
             .header(AuthConstants.AUTH_TOKEN_HEADER_NAME, ClientSetupExtension.CRUD_API_KEY)
             .contentType(ContentType.JSON)
-            .body(new ModifyTaskGroupDto<>("", TaskStatus.APPROVED, new ModifyOWLTaskGroupDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal")))
+            .body(new ModifyTaskGroupDto<>("", TaskStatus.APPROVED, new ModifyOWLTaskGroupDto()))
             // WHEN
             .when()
             .post("/api/taskGroup/{id}", this.taskGroupId + 2)
@@ -146,7 +145,7 @@ class TaskGroupControllerTest {
             .port(port)
             .header(AuthConstants.AUTH_TOKEN_HEADER_NAME, ClientSetupExtension.SUBMIT_API_KEY)
             .contentType(ContentType.JSON)
-            .body(new ModifyTaskGroupDto<>("owl", TaskStatus.APPROVED, new ModifyOWLTaskGroupDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal")))
+            .body(new ModifyTaskGroupDto<>("owl", TaskStatus.APPROVED, new ModifyOWLTaskGroupDto()))
             // WHEN
             .when()
             .post("/api/taskGroup/{id}", this.taskGroupId + 2)
@@ -164,7 +163,7 @@ class TaskGroupControllerTest {
             .port(port)
             .header(AuthConstants.AUTH_TOKEN_HEADER_NAME, ClientSetupExtension.CRUD_API_KEY)
             .contentType(ContentType.JSON)
-            .body(new ModifyTaskGroupDto<>("owl", TaskStatus.APPROVED, new ModifyOWLTaskGroupDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal")))
+            .body(new ModifyTaskGroupDto<>("owl", TaskStatus.APPROVED, new ModifyOWLTaskGroupDto()))
             // WHEN
             .when()
             .put("/api/taskGroup/{id}", this.taskGroupId)
@@ -183,7 +182,7 @@ class TaskGroupControllerTest {
             .port(port)
             .header(AuthConstants.AUTH_TOKEN_HEADER_NAME, ClientSetupExtension.CRUD_API_KEY)
             .contentType(ContentType.JSON)
-            .body(new ModifyTaskGroupDto<>("owl", TaskStatus.APPROVED, new ModifyOWLTaskGroupDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal")))
+            .body(new ModifyTaskGroupDto<>("owl", TaskStatus.APPROVED, new ModifyOWLTaskGroupDto()))
             // WHEN
             .when()
             .put("/api/taskGroup/{id}", this.taskGroupId + 1)
@@ -199,7 +198,7 @@ class TaskGroupControllerTest {
             .port(port)
             .header(AuthConstants.AUTH_TOKEN_HEADER_NAME, ClientSetupExtension.CRUD_API_KEY)
             .contentType(ContentType.JSON)
-            .body(new ModifyTaskGroupDto<>("sql", TaskStatus.APPROVED, new ModifyOWLTaskGroupDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal")))
+            .body(new ModifyTaskGroupDto<>("sql", TaskStatus.APPROVED, new ModifyOWLTaskGroupDto()))
             // WHEN
             .when()
             .put("/api/taskGroup/{id}", this.taskGroupId)
@@ -230,7 +229,7 @@ class TaskGroupControllerTest {
             .port(port)
             .header(AuthConstants.AUTH_TOKEN_HEADER_NAME, ClientSetupExtension.SUBMIT_API_KEY)
             .contentType(ContentType.JSON)
-            .body(new ModifyTaskGroupDto<>("owl", TaskStatus.APPROVED, new ModifyOWLTaskGroupDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal")))
+            .body(new ModifyTaskGroupDto<>("owl", TaskStatus.APPROVED, new ModifyOWLTaskGroupDto()))
             // WHEN
             .when()
             .put("/api/taskGroup/{id}", this.taskGroupId)
@@ -285,15 +284,15 @@ class TaskGroupControllerTest {
     }
     //#endregion
 
-    @Test
+    /*@Test
     void mapToDto() {
         // Arrange
-        var taskGroup = new OWLTaskGroup("Class: Person\nSubClassOf: Human\nDisjointWith: Animal");
+        var taskGroup = new OWLTaskGroup();
 
         // Act
         var result = new TaskGroupController(null).mapToDto(taskGroup);
 
         // Assert
-        assertEquals("Class: Person\nSubClassOf: Human\nDisjointWith: Animal", result.solution());
-    }
+        assertEquals();
+    }*/
 }

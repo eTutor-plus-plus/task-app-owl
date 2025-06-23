@@ -10,62 +10,29 @@ class OWLTaskGroupTest {
     @Test
     void testConstructor1() {
         // Arrange
-        final String expectedSolution = "Class: Person\nSubClassOf: Human\nDisjointWith: Animal";
+        final TaskStatus status = TaskStatus.APPROVED;
 
         // Act
-        OWLTaskGroup OWLTaskGroup = new OWLTaskGroup(expectedSolution);
-        String actualSolution = OWLTaskGroup.getSolution();
+        OWLTaskGroup OWLTaskGroup = new OWLTaskGroup(status);
+        TaskStatus actualStatus = OWLTaskGroup.getStatus();
 
         // Assert
-        assertEquals(expectedSolution, actualSolution);
+        assertEquals(status, actualStatus);
     }
 
     @Test
     void testConstructor2() {
         // Arrange
-        final TaskStatus status = TaskStatus.APPROVED;
-        final String expectedSolution = "Class: Person\nSubClassOf: Human\nDisjointWith: Animal";
-
-        // Act
-        OWLTaskGroup OWLTaskGroup = new OWLTaskGroup(status, expectedSolution);
-        TaskStatus actualStatus = OWLTaskGroup.getStatus();
-        String actualSolution = OWLTaskGroup.getSolution();
-
-        // Assert
-        assertEquals(status, actualStatus);
-        assertEquals(expectedSolution, actualSolution);
-    }
-
-    @Test
-    void testConstructor3() {
-        // Arrange
         final long expectedId = 21;
         final TaskStatus status = TaskStatus.APPROVED;
-        final String expectedSolution = "Class: Person\nSubClassOf: Human\nDisjointWith: Animal";
 
         // Act
-        OWLTaskGroup OWLTaskGroup = new OWLTaskGroup(expectedId, status, expectedSolution);
+        OWLTaskGroup OWLTaskGroup = new OWLTaskGroup(expectedId, status);
         long actualId = OWLTaskGroup.getId();
         TaskStatus actualStatus = OWLTaskGroup.getStatus();
-        String actualSolution = OWLTaskGroup.getSolution();
 
         // Assert
         assertEquals(expectedId, actualId);
         assertEquals(status, actualStatus);
-        assertEquals(expectedSolution, actualSolution);
-    }
-
-    @Test
-    void testGetSetSolution() {
-        // Arrange
-        OWLTaskGroup OWLTaskGroup = new OWLTaskGroup();
-        final String expected = "Class: Person\nSubClassOf: Human\nDisjointWith: Animal";
-
-        // Act
-        OWLTaskGroup.setSolution(expected);
-        String actual = OWLTaskGroup.getSolution();
-
-        // Assert
-        assertEquals(expected, actual);
     }
 }

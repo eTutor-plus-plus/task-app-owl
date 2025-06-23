@@ -8,7 +8,6 @@ CREATE TABLE task_group
 (
     id         BIGINT      NOT NULL,
     status     TASK_STATUS NOT NULL,
-    solution   VARCHAR     NOT NULL,
     CONSTRAINT task_group_pk PRIMARY KEY (id)
 );
 

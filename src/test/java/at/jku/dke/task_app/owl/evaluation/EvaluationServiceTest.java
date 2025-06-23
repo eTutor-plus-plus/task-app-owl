@@ -36,7 +36,7 @@ class EvaluationServiceTest {
         taskRepository.deleteAll();
         taskGroupRepository.deleteAll();
 
-        var taskGroup = taskGroupRepository.save(new OWLTaskGroup(1L, TaskStatus.APPROVED, "Class: Person\nSubClassOf: Human\nDisjointWith: Animal"));
+        var taskGroup = taskGroupRepository.save(new OWLTaskGroup(1L, TaskStatus.APPROVED));
         var task = taskRepository.save(new OWLTask(1L, BigDecimal.TEN, TaskStatus.APPROVED, taskGroup,
             "Class: Person\nSubClassOf: Human\nDisjointWith: Animal"));
         this.taskId = task.getId();

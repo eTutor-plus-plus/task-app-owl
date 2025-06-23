@@ -24,6 +24,6 @@ public class TaskGroupController extends BaseTaskGroupController<OWLTaskGroup, O
 
     @Override
     protected OWLTaskGroupDto mapToDto(OWLTaskGroup taskGroup) {
-        return new OWLTaskGroupDto(taskGroup.getSolution());
+        return new OWLTaskGroupDto();
     }
 }

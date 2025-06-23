@@ -11,8 +11,8 @@ import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.formats.ManchesterSyntaxDocumentFormat;
 import org.semanticweb.owlapi.io.StringDocumentSource;
 import org.semanticweb.owlapi.io.StringDocumentTarget;
+import org.semanticweb.owlapi.manchestersyntax.renderer.ManchesterOWLSyntaxOWLObjectRendererImpl;
 import org.semanticweb.owlapi.model.*;
-import org.semanticweb.owlapi.reasoner.InferenceType;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.reasoner.OWLReasonerFactory;
 import org.semanticweb.owlapi.reasoner.OWLReasonerRuntimeException;
@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -82,55 +83,40 @@ public class EvaluationService {
             ));
 
             LOG.info("Evaluating ontologies:\n");
-            StringDocumentTarget target = new StringDocumentTarget();
-            submittedOntology.getOWLOntologyManager().saveOntology(submittedOntology, new ManchesterSyntaxDocumentFormat(), target);
-            LOG.info("Submitted: \n{}", target);
-            StringDocumentTarget target2 = new StringDocumentTarget();
-            submittedOntology.getOWLOntologyManager().saveOntology(solutionOntology, new ManchesterSyntaxDocumentFormat(), target2);
-            LOG.info("Solution: \n{}", target2);
+            StringDocumentTarget submitted = new StringDocumentTarget();
+            submittedOntology.getOWLOntologyManager().saveOntology(submittedOntology, new ManchesterSyntaxDocumentFormat(), submitted);
+            LOG.info("Submitted: \n{}", submitted);
+            StringDocumentTarget solution = new StringDocumentTarget();
+            submittedOntology.getOWLOntologyManager().saveOntology(solutionOntology, new ManchesterSyntaxDocumentFormat(), solution);
+            LOG.info("Solution: \n{}", solution);
 
             // Compare ontologies
             OntologyComparisonResult ontologyComparisonResult = compareOntologies(submittedOntology, solutionOntology);
 
             // Prepare feedback message parts
             assert ontologyComparisonResult != null;
-            String submissionConsistencyMessage = this.messageSource.getMessage(ontologyComparisonResult.submittedIsConsistent ? "owl.submission.consistent" : "owl.submission.inconsistent", null, locale);
-            String solutionConsistencyMessage = this.messageSource.getMessage(ontologyComparisonResult.solutionIsConsistent ? "owl.solution.consistent" : "owl.solution.inconsistent", null, locale);
-            StringBuilder subEntailsMessage;
-            if (ontologyComparisonResult.submittedEntailsSolution) {
-                subEntailsMessage = new StringBuilder(this.messageSource.getMessage("owl.submission.entails", null, locale));
+            String submissionConsistencyMessage = this.messageSource.getMessage(ontologyComparisonResult.submittedIsConsistent ? "criterium.consistency.consistent" : "criterium.consistency.inconsistent", null, locale);
+            //String solutionConsistencyMessage = this.messageSource.getMessage(ontologyComparisonResult.solutionIsConsistent ? "owl.solution.consistent" : "owl.solution.inconsistent", null, locale);
+
+            ManchesterOWLSyntaxOWLObjectRendererImpl renderer = new ManchesterOWLSyntaxOWLObjectRendererImpl();
+
+            StringBuilder missingAxiomsMessage;
+            if (ontologyComparisonResult.missingAxioms.isEmpty()) {
+                missingAxiomsMessage = new StringBuilder(this.messageSource.getMessage("owl.submission.not-missing", null, locale));
             } else {
-                subEntailsMessage = new StringBuilder(this.messageSource.getMessage("owl.submission.doesnt-entail", null, locale));
-                for (OWLAxiom ax : ontologyComparisonResult.nonEntailedSubmittedAxioms) {
-                    subEntailsMessage.append("\n").append(ax.toString());
+                missingAxiomsMessage = new StringBuilder(this.messageSource.getMessage("owl.submission.missing", null, locale));
+                for (OWLAxiom ax : ontologyComparisonResult.missingAxioms) {
+                    missingAxiomsMessage.append("\n").append(" [").append(renderer.render(ax)).append("] ");
                 }
             }
 
-            StringBuilder solEntailsMessage;
-            if (ontologyComparisonResult.solutionEntailsSubmitted) {
-                solEntailsMessage = new StringBuilder(this.messageSource.getMessage("owl.solution.entails", null, locale));
+            StringBuilder redundantAxiomsMessage;
+            if (ontologyComparisonResult.redundantAxioms.isEmpty()) {
+                redundantAxiomsMessage = new StringBuilder(this.messageSource.getMessage("owl.submission.not-redundant", null, locale));
             } else {
-                solEntailsMessage = new StringBuilder(this.messageSource.getMessage("owl.solution.doesnt-entail", null, locale));
-                for (OWLAxiom ax : ontologyComparisonResult.nonEntailedSolutionAxioms) {
-                    solEntailsMessage.append("\n").append(ax.toString());
-                }
-            }
-            StringBuilder classMismatchMessage = new StringBuilder(this.messageSource.getMessage("owl.class.mismatch", null, locale));
-            if (!ontologyComparisonResult.classMismatches.isEmpty()) {
-                for (OWLClass cls : ontologyComparisonResult.classMismatches) {
-                    classMismatchMessage.append("\n").append(cls.toString());
-                }
-            }
-            StringBuilder objectPropMismatchMessage = new StringBuilder(this.messageSource.getMessage("owl.object-prop.mismatch", null, locale));
-            if (!ontologyComparisonResult.objectPropertyMismatches.isEmpty()) {
-                for (OWLObjectProperty prop : ontologyComparisonResult.objectPropertyMismatches) {
-                    objectPropMismatchMessage.append("\n").append(prop.toString());
-                }
-            }
-            StringBuilder dataPropMismatchMessage = new StringBuilder(this.messageSource.getMessage("owl.data-prop.mismatch", null, locale));
-            if (!ontologyComparisonResult.dataPropertyMismatches.isEmpty()) {
-                for (OWLDataProperty prop : ontologyComparisonResult.dataPropertyMismatches) {
-                    dataPropMismatchMessage.append("\n").append(prop.toString());
+                redundantAxiomsMessage = new StringBuilder(this.messageSource.getMessage("owl.submission.redundant", null, locale));
+                for (OWLAxiom ax : ontologyComparisonResult.redundantAxioms) {
+                    redundantAxiomsMessage.append("\n").append(" [").append(renderer.render(ax)).append("] ");
                 }
             }
 
@@ -150,16 +136,13 @@ public class EvaluationService {
                     new Object[]{submission.submission().input()}, locale);
                 case DIAGNOSE -> {
 
-                    boolean needsFurtherFeedback = false;
                     switch (correctness) {
                         case 0: {
                             feedback = this.messageSource.getMessage("owl.submission.incorrect", null, locale);
-                            needsFurtherFeedback = true;
                             break;
                         }
                         case 1: {
                             feedback = this.messageSource.getMessage("owl.submission.partially-correct", null, locale);
-                            needsFurtherFeedback = true;
                             break;
                         }
                         case 2: {
@@ -168,19 +151,96 @@ public class EvaluationService {
                         }
                     }
 
-                    if (needsFurtherFeedback) {
-                        if (!ontologyComparisonResult.submittedIsConsistent) feedback += "\n" + submissionConsistencyMessage;
-                        if (!ontologyComparisonResult.solutionIsConsistent) feedback += "\n" + solutionConsistencyMessage;
-                        if (!ontologyComparisonResult.submittedEntailsSolution) feedback += "\n" + subEntailsMessage;
-                        if (!ontologyComparisonResult.solutionEntailsSubmitted) feedback += "\n" + solEntailsMessage;
-                        if (!ontologyComparisonResult.classMismatches.isEmpty()) feedback += "\n" + classMismatchMessage;
-                        if (!ontologyComparisonResult.objectPropertyMismatches.isEmpty()) feedback += "\n" + objectPropMismatchMessage;
-                        if (!ontologyComparisonResult.dataPropertyMismatches.isEmpty()) feedback += "\n" + dataPropMismatchMessage;
-                    }
+                    LOG.info("Feedback level is {}", submission.feedbackLevel());
 
-                    // TODO
                     if (submission.feedbackLevel() > 0) {
-                        addDetailedFeedback(criteria, submittedOntology, solutionOntology, locale, points);
+                        // Little feedback
+                        // Add consistency criterion
+                        criteria.add(new CriterionDto(
+                            this.messageSource.getMessage("criterium.consistency", null, locale),
+                            null,
+                            ontologyComparisonResult.submittedIsConsistent,
+                            submissionConsistencyMessage
+                        ));
+                    }
+                    if (submission.feedbackLevel() > 1) {
+                        // Some feedback
+                        // Determine if there are any wrong classes or individuals
+                        boolean correctClasses = ontologyComparisonResult.incompleteClasses.isEmpty()
+                            && ontologyComparisonResult.redundantClasses.isEmpty()
+                            && ontologyComparisonResult.missingClasses.isEmpty();
+                        boolean correctIndividuals = ontologyComparisonResult.incompleteIndividuals.isEmpty()
+                            && ontologyComparisonResult.redundantIndividuals.isEmpty()
+                            && ontologyComparisonResult.missingIndividuals.isEmpty();
+
+                        // Add wrong classes and individuals criterion
+                        criteria.add(new CriterionDto(
+                            this.messageSource.getMessage("criterium.classes", null, locale),
+                            null,
+                            correctClasses,
+                            correctClasses ? this.messageSource.getMessage("criterium.classes.correct", null, locale) : this.messageSource.getMessage("criterium.classes.wrong", null, locale)
+                        ));
+                        criteria.add(new CriterionDto(
+                            this.messageSource.getMessage("criterium.individuals", null, locale),
+                            null,
+                            correctIndividuals,
+                            correctIndividuals ? this.messageSource.getMessage("criterium.individuals.correct", null, locale) : this.messageSource.getMessage("criterium.individuals.wrong", null, locale)
+                        ));
+
+                        // Give out the incomplete, redundant and missing classes
+                        if (!ontologyComparisonResult.incompleteClasses.isEmpty()) {
+                            feedback += "\n"
+                                + this.messageSource.getMessage("owl.submission.incomplete-classes", null, locale)
+                                + " ["
+                                + ontologyComparisonResult.incompleteClasses.stream().map(cls -> cls.getIRI().getShortForm()).collect(Collectors.joining(", "))
+                                + "].";
+                        }
+                        if (!ontologyComparisonResult.redundantClasses.isEmpty()) {
+                            feedback += "\n"
+                                + this.messageSource.getMessage("owl.submission.redundant-classes", null, locale)
+                                + " ["
+                                + ontologyComparisonResult.redundantClasses.stream().map(cls -> cls.getIRI().getShortForm()).collect(Collectors.joining(", "))
+                                + "].";
+                        }
+                        if (!ontologyComparisonResult.missingClasses.isEmpty()) {
+                            feedback += "\n"
+                                + this.messageSource.getMessage("owl.submission.missing-classes", null, locale)
+                                + " ["
+                                + ontologyComparisonResult.missingClasses.stream().map(cls -> cls.getIRI().getShortForm()).collect(Collectors.joining(", "))
+                                + "].";
+                        }
+
+                        // Give out the incomplete, redundant and missing individuals
+                        if (!ontologyComparisonResult.incompleteIndividuals.isEmpty()) {
+                            feedback += "\n"
+                                + this.messageSource.getMessage("owl.submission.incomplete-individuals", null, locale)
+                                + " ["
+                                + ontologyComparisonResult.incompleteIndividuals.stream().map(ind -> ind.asOWLNamedIndividual().getIRI().getShortForm()).collect(Collectors.joining(", "))
+                                + "].";
+                        }
+                        if (!ontologyComparisonResult.redundantIndividuals.isEmpty()) {
+                            feedback += "\n"
+                                + this.messageSource.getMessage("owl.submission.redundant-individuals", null, locale)
+                                + " ["
+                                + ontologyComparisonResult.redundantIndividuals.stream().map(ind -> ind.asOWLNamedIndividual().getIRI().getShortForm()).collect(Collectors.joining(", "))
+                                + "].";
+                        }
+                        if (!ontologyComparisonResult.missingIndividuals.isEmpty()) {
+                            feedback += "\n"
+                                + this.messageSource.getMessage("owl.submission.missing-individuals", null, locale)
+                                + " ["
+                                + ontologyComparisonResult.missingIndividuals.stream().map(ind -> ind.asOWLNamedIndividual().getIRI().getShortForm()).collect(Collectors.joining(", "))
+                                + "].";
+                        }
+                    }
+                    if (submission.feedbackLevel() > 2) {
+                        // Much feedback
+                        if (!ontologyComparisonResult.missingAxioms.isEmpty()) {
+                            feedback += "\n" + missingAxiomsMessage;
+                        }
+                        if (!ontologyComparisonResult.redundantAxioms.isEmpty()) {
+                            feedback += "\n" + redundantAxiomsMessage;
+                        }
                     }
                 }
                 case SUBMIT -> {
@@ -202,7 +262,7 @@ public class EvaluationService {
                 default -> throw new IllegalStateException("Unexpected evaluation mode: " + submission.mode());
             }
 
-        } catch (OWLRuntimeException e) {
+        } catch (OWLRuntimeException | OWLOntologyStorageException e) {
             LOG.error("Failed to parse Manchester syntax", e);
             criteria.add(new CriterionDto(
                 this.messageSource.getMessage("criterium.syntax", null, locale),
@@ -211,9 +271,6 @@ public class EvaluationService {
                 e.getMessage()
             ));
             feedback = this.messageSource.getMessage("error.syntax", null, locale);
-        } catch (OWLOntologyStorageException e) {
-            System.err.println("Failed to render ontology: " + e.getMessage());
-            feedback = this.messageSource.getMessage("error.syntax", null, locale);
         }
 
         return new GradingDto(task.getMaxPoints(), points, feedback, criteria);
@@ -221,33 +278,29 @@ public class EvaluationService {
 
     private static BigDecimal calculatePoints(OntologyComparisonResult ontologyComparisonResult, BigDecimal maxPoints) {
 
-        BigDecimal points = BigDecimal.ZERO;
+        BigDecimal points = maxPoints;
 
-        // 20%
-        if (ontologyComparisonResult.submittedIsConsistent) {
-            points = points.add(new BigDecimal("0.20"));
-        }
+        // No classes or individuals in solution --> no mistakes to make
+        if(ontologyComparisonResult.classesInSolution.isEmpty() && ontologyComparisonResult.individualsInSolution.isEmpty()) return points;
+        // No points for inconsistent submissions
+        if(!ontologyComparisonResult.submittedIsConsistent) return BigDecimal.ZERO;
 
-        // 40%
-        if (ontologyComparisonResult.submittedEntailsSolution) {
-            points = points.add(new BigDecimal("0.20"));
-        }
-        if (ontologyComparisonResult.solutionEntailsSubmitted) {
-            points = points.add(new BigDecimal("0.20"));
-        }
+        BigDecimal pointsPerClass = maxPoints.divide(BigDecimal.valueOf(ontologyComparisonResult.classesInSolution.size() + ontologyComparisonResult.individualsInSolution.size()), 2, RoundingMode.HALF_UP);
 
-        // 40%
-        if (ontologyComparisonResult.classMismatches.isEmpty()) {
-            points = points.add(new BigDecimal("0.15"));
-        }
-        if (ontologyComparisonResult.objectPropertyMismatches.isEmpty()) {
-            points = points.add(new BigDecimal("0.15"));
-        }
-        if (ontologyComparisonResult.dataPropertyMismatches.isEmpty()) {
-            points = points.add(new BigDecimal("0.10"));
-        }
+        // Subtract points for wrong classes and individuals, including ones that are missing/redundant
+        Set<OWLClass> wrongClasses = new HashSet<>(ontologyComparisonResult.incompleteClasses);
+        wrongClasses.addAll(ontologyComparisonResult.redundantClasses);
+        wrongClasses.addAll(ontologyComparisonResult.missingClasses);
 
-        return points.multiply(maxPoints);
+        Set<OWLIndividual> wrongIndividuals = new HashSet<>(ontologyComparisonResult.incompleteIndividuals);
+        wrongIndividuals.addAll(ontologyComparisonResult.redundantIndividuals);
+        wrongIndividuals.addAll(ontologyComparisonResult.missingIndividuals);
+
+        points = points.subtract(pointsPerClass.multiply(BigDecimal.valueOf(wrongClasses.size() + wrongIndividuals.size())));
+
+        points = points.setScale(0, RoundingMode.FLOOR); // Always round down
+
+        return points.max(BigDecimal.ZERO);
     }
 
     // Parses Manchester Syntax String Input into OWL Ontology
@@ -255,8 +308,6 @@ public class EvaluationService {
         OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
 
         try {
-            // TODO Validate Syntax
-
             // Add required ontology headers
             String completeOntology = """
                 Prefix: owl: <http://www.w3.org/2002/07/owl#>
@@ -308,112 +359,71 @@ public class EvaluationService {
             }
 
             OntologyComparisonResult result = new OntologyComparisonResult();
+
+            // Save classes and individuals in solution for calculating points later
+            result.classesInSolution.addAll(solutionOntology.getClassesInSignature());
+            LOG.info("Number of classes in solution: {}", result.classesInSolution);
+            result.individualsInSolution.addAll(solutionOntology.getIndividualsInSignature());
+            LOG.info("Number of individuals in solution: {}", result.individualsInSolution);
+
+            // Save redundant and missing classes
+            result.redundantClasses.addAll(submittedOntology.getClassesInSignature());
+            result.redundantClasses.removeAll(solutionOntology.getClassesInSignature());
+            LOG.info("Redundant classes: {}", result.redundantClasses);
+
+            result.missingClasses.addAll(solutionOntology.getClassesInSignature());
+            result.missingClasses.removeAll(submittedOntology.getClassesInSignature());
+            LOG.info("Missing classes: {}", result.missingClasses);
+
+            // Save redundant and missing individuals
+            result.missingIndividuals.addAll(solutionOntology.getIndividualsInSignature());
+            result.missingIndividuals.removeAll(submittedOntology.getIndividualsInSignature());
+            LOG.info("Missing individuals: {}", result.missingIndividuals);
+
+            result.redundantIndividuals.addAll(submittedOntology.getIndividualsInSignature());
+            result.redundantIndividuals.removeAll(solutionOntology.getIndividualsInSignature());
+            LOG.info("Redundant individuals: {}", result.redundantIndividuals);
+
             result.submittedIsConsistent = subIsConsistent;
             result.solutionIsConsistent = solIsConsistent;
             if (!subIsConsistent || !solIsConsistent) {
                 return result;
             }
 
-            // Precompute inferences
-            subReasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY,
-                InferenceType.OBJECT_PROPERTY_HIERARCHY,
-                InferenceType.DATA_PROPERTY_HIERARCHY);
-            solReasoner.precomputeInferences(InferenceType.CLASS_HIERARCHY,
-                InferenceType.OBJECT_PROPERTY_HIERARCHY,
-                InferenceType.DATA_PROPERTY_HIERARCHY);
-
-            // Log both ontology structures
-            LOG.info("Submitted ontology structure:");
-            submittedOntology.logicalAxioms().forEach(ax -> LOG.info(ax.toString()));
-
-            LOG.info("Solution ontology structure:");
-            solutionOntology.logicalAxioms().forEach(ax -> LOG.info(ax.toString()));
-
-            // Check mutual entailment
             Set<OWLAxiom> submittedAxioms = submittedOntology.getAxioms();
             Set<OWLAxiom> solutionAxioms = solutionOntology.getAxioms();
 
-            result.submittedEntailsSolution = solReasoner.isEntailed(submittedAxioms);
-            result.solutionEntailsSubmitted = subReasoner.isEntailed(solutionAxioms);
+            // Log both ontologies' axioms
+            LOG.info("Submitted ontology axioms:");
+            submittedAxioms.forEach(ax -> LOG.info(ax.toString()));
+            LOG.info("Solution ontology axioms:");
+            solutionAxioms.forEach(ax -> LOG.info(ax.toString()));
 
+            // Check mutual entailment
             // Store non-entailed axioms for detailed feedback
             for (OWLAxiom ax : submittedAxioms) {
-                if (!subReasoner.isEntailed(ax)) {
-                    result.nonEntailedSubmittedAxioms.add(ax);
-                }
-            }
-            for (OWLAxiom ax : solutionAxioms) {
                 if (!solReasoner.isEntailed(ax)) {
-                    result.nonEntailedSolutionAxioms.add(ax);
+                    result.redundantAxioms.add(ax);
+                    result.incompleteClasses.addAll(ax.getClassesInSignature());
+                    result.incompleteIndividuals.addAll(ax.getIndividualsInSignature());
+                    LOG.info("Redundant axiom: {}", ax);
+                    LOG.info("Classes involved in redundant axiom: {}", ax.getClassesInSignature());
+                    LOG.info("Individuals involved in redundant axiom: {}", ax.getIndividualsInSignature());
                 }
             }
 
-            // Compare classes
-            Set<OWLClass> allClasses = submittedOntology.classesInSignature().collect(Collectors.toSet());
-            allClasses.addAll(solutionOntology.classesInSignature().collect(Collectors.toSet()));
-            for (OWLClass cls : allClasses) {
-                if (cls.isOWLNothing()) continue;
-
-                Set<OWLClass> submittedSuper = subReasoner.getSuperClasses(cls, false).entities().collect(Collectors.toSet());
-                Set<OWLClass> solutionSuper = solReasoner.getSuperClasses(cls, false).entities().collect(Collectors.toSet());
-                Set<OWLClass> submittedEq = subReasoner.getEquivalentClasses(cls).entities().collect(Collectors.toSet());
-                Set<OWLClass> solutionEq = solReasoner.getEquivalentClasses(cls).entities().collect(Collectors.toSet());
-
-                LOG.info("Class: {} - Comparing hierarchies:", cls);
-                LOG.info("Submitted super classes: {}", submittedSuper);
-                LOG.info("Solution super classes: {}", solutionSuper);
-                LOG.info("Submitted equivalent classes: {}", submittedEq);
-                LOG.info("Solution equivalent classes: {}", solutionEq);
-
-
-
-                if (!submittedSuper.equals(solutionSuper) || !submittedEq.equals(solutionEq)) {
-                    LOG.info("Hierarchies don't match for class: {}", cls);
-                    result.classMismatches.add(cls);
+            for (OWLAxiom ax : solutionAxioms) {
+                if (!subReasoner.isEntailed(ax)) {
+                    result.missingAxioms.add(ax);
+                    result.incompleteClasses.addAll(ax.getClassesInSignature());
+                    result.incompleteIndividuals.addAll(ax.getIndividualsInSignature());
+                    LOG.info("Missing axiom: {}", ax);
+                    LOG.info("Classes involved in missing axiom: {}", ax.getClassesInSignature());
+                    LOG.info("Individuals involved in missing axiom: {}", ax.getIndividualsInSignature());
                 }
             }
 
-            // Compare object properties
-            Set<OWLObjectProperty> allObjProps = submittedOntology.objectPropertiesInSignature().collect(Collectors.toSet());
-            allObjProps.addAll(solutionOntology.objectPropertiesInSignature().collect(Collectors.toSet()));
-            for (OWLObjectProperty prop : allObjProps) {
-                Set<OWLObjectPropertyExpression> submittedSuper = subReasoner.getSuperObjectProperties(prop, false).entities().collect(Collectors.toSet());
-                Set<OWLObjectPropertyExpression> solutionSuper = solReasoner.getSuperObjectProperties(prop, false).entities().collect(Collectors.toSet());
-                Set<OWLObjectPropertyExpression> submittedEq = subReasoner.getEquivalentObjectProperties(prop).entities().collect(Collectors.toSet());
-                Set<OWLObjectPropertyExpression> solutionEq = solReasoner.getEquivalentObjectProperties(prop).entities().collect(Collectors.toSet());
-
-                LOG.info("Object Property: {} - Comparing hierarchies:", prop);
-                LOG.info("Submitted super object properties: {}", submittedSuper);
-                LOG.info("Solution super object properties: {}", solutionSuper);
-                LOG.info("Submitted equivalent object properties: {}", submittedEq);
-                LOG.info("Solution equivalent object properties: {}", solutionEq);
-
-                if (!submittedSuper.equals(solutionSuper) || !submittedEq.equals(solutionEq)) {
-                    LOG.info("Hierarchies don't match for object property: {}", prop);
-                    result.objectPropertyMismatches.add(prop);
-                }
-            }
-
-            // Compare data properties
-            Set<OWLDataProperty> allDataProps = submittedOntology.dataPropertiesInSignature().collect(Collectors.toSet());
-            allDataProps.addAll(solutionOntology.dataPropertiesInSignature().collect(Collectors.toSet()));
-            for (OWLDataProperty prop : allDataProps) {
-                Set<OWLDataProperty> submittedSuper = subReasoner.getSuperDataProperties(prop, false).entities().collect(Collectors.toSet());
-                Set<OWLDataProperty> solutionSuper = solReasoner.getSuperDataProperties(prop, false).entities().collect(Collectors.toSet());
-                Set<OWLDataProperty> submittedEq = subReasoner.getEquivalentDataProperties(prop).entities().collect(Collectors.toSet());
-                Set<OWLDataProperty> solutionEq = solReasoner.getEquivalentDataProperties(prop).entities().collect(Collectors.toSet());
-
-                LOG.info("Data Property: {} - Comparing hierarchies:", prop);
-                LOG.info("Submitted super data properties: {}", submittedSuper);
-                LOG.info("Solution super data properties: {}", solutionSuper);
-                LOG.info("Submitted equivalent data properties: {}", submittedEq);
-                LOG.info("Solution equivalent data properties: {}", solutionEq);
-
-                if (!submittedSuper.equals(solutionSuper) || !submittedEq.equals(solutionEq)) {
-                    LOG.info("Hierarchies don't match for data property: {}", prop);
-                    result.dataPropertyMismatches.add(prop);
-                }
-            }
+            LOG.info("Wrong submitted classes: {}", result.incompleteClasses);
 
             return result;
 
@@ -424,122 +434,23 @@ public class EvaluationService {
     }
 
     private static class OntologyComparisonResult {
-        private final Set<OWLClass> classMismatches = new HashSet<>();
-        private final Set<OWLObjectProperty> objectPropertyMismatches = new HashSet<>();
-        private final Set<OWLDataProperty> dataPropertyMismatches = new HashSet<>();
+
         private boolean submittedIsConsistent;
         private boolean solutionIsConsistent;
-        private boolean submittedEntailsSolution;
-        private boolean solutionEntailsSubmitted;
-        private final Set<OWLAxiom> nonEntailedSubmittedAxioms = new HashSet<>();
-        private final Set<OWLAxiom> nonEntailedSolutionAxioms = new HashSet<>();
+        private final Set<OWLAxiom> redundantAxioms = new HashSet<>();
+        private final Set<OWLAxiom> missingAxioms = new HashSet<>();
+        private final Set<OWLClass> incompleteClasses = new HashSet<>();
+        private final Set<OWLClass> redundantClasses = new HashSet<>();
+        private final Set<OWLClass> missingClasses = new HashSet<>();
+        private final Set<OWLClass> classesInSolution = new HashSet<>();
+        private final Set<OWLIndividual> incompleteIndividuals = new HashSet<>();
+        private final Set<OWLIndividual> missingIndividuals = new HashSet<>();
+        private final Set<OWLIndividual> redundantIndividuals = new HashSet<>();
+        private final Set<OWLIndividual> individualsInSolution = new HashSet<>();
 
         public OntologyComparisonResult() {
             this.submittedIsConsistent = false;
             this.solutionIsConsistent = false;
-            this.submittedEntailsSolution = false; // is updated during comparison
-            this.solutionEntailsSubmitted = false; // is updated during comparison
-        }
-    }
-
-    private boolean areEquivalentClassHierarchies(OWLClass owlClass, OWLReasoner r1, OWLReasoner r2) {
-        return r1.getEquivalentClasses(owlClass).equals(r2.getEquivalentClasses(owlClass)) &&
-               r1.getSuperClasses(owlClass).equals(r2.getSuperClasses(owlClass)) &&
-               r1.getSubClasses(owlClass).equals(r2.getSubClasses(owlClass));
-    }
-
-    private boolean areEquivalentObjectPropertyHierarchies(OWLObjectProperty objProp, OWLReasoner r1, OWLReasoner r2) {
-        return r1.getEquivalentObjectProperties(objProp).equals(r2.getEquivalentObjectProperties(objProp)) &&
-               r1.getSuperObjectProperties(objProp).equals(r2.getSuperObjectProperties(objProp)) &&
-               r1.getSubObjectProperties(objProp).equals(r2.getSubObjectProperties(objProp));
-    }
-
-    private boolean areEquivalentDataPropertyHierarchies(OWLDataProperty dataProp, OWLReasoner r1, OWLReasoner r2) {
-        return r1.getEquivalentDataProperties(dataProp).equals(r2.getEquivalentDataProperties(dataProp)) &&
-               r1.getSuperDataProperties(dataProp).equals(r2.getSuperDataProperties(dataProp)) &&
-               r1.getSubDataProperties(dataProp).equals(r2.getSubDataProperties(dataProp));
-    }
-
-
-    private void addDetailedFeedback(List<CriterionDto> criteria,
-                                     OWLOntology submitted,
-                                     OWLOntology solution,
-                                     Locale locale,
-                                     BigDecimal points) {
-        try {
-            // Create reasoner factory and reasoners
-            OWLReasonerFactory reasonerFactory = new Reasoner.ReasonerFactory();
-            OWLReasoner submittedReasoner = reasonerFactory.createReasoner(submitted);
-            OWLReasoner solutionReasoner = reasonerFactory.createReasoner(solution);
-
-            // Check ontology consistency
-            boolean isConsistent = submittedReasoner.isConsistent() && solutionReasoner.isConsistent();
-            if (!isConsistent) {
-                criteria.add(new CriterionDto(
-                    this.messageSource.getMessage("criterium.consistency", null, locale),
-                    BigDecimal.ZERO,
-                    false,
-                    this.messageSource.getMessage("criterium.consistency.invalid", null, locale)
-                ));
-                return;
-            }
-
-            // Compare class hierarchies (40% of points)
-            boolean classesMatch = true;
-            for (OWLClass cls : solution.getClassesInSignature()) {
-                if (!areEquivalentClassHierarchies(cls, submittedReasoner, solutionReasoner)) {
-                    classesMatch = false;
-                    break;
-                }
-            }
-            criteria.add(new CriterionDto(
-                this.messageSource.getMessage("criterium.classes", null, locale),
-                classesMatch ? points.multiply(BigDecimal.valueOf(0.4)) : BigDecimal.ZERO,
-                classesMatch,
-                this.messageSource.getMessage(classesMatch ?
-                    "criterium.classes.match" : "criterium.classes.mismatch", null, locale)
-            ));
-
-            // Compare object property hierarchies (30% of points)
-            boolean objectPropertiesMatch = true;
-            for (OWLObjectProperty prop : solution.getObjectPropertiesInSignature()) {
-                if (!areEquivalentObjectPropertyHierarchies(prop, submittedReasoner, solutionReasoner)) {
-                    objectPropertiesMatch = false;
-                    break;
-                }
-            }
-            criteria.add(new CriterionDto(
-                this.messageSource.getMessage("criterium.object.properties", null, locale),
-                objectPropertiesMatch ? points.multiply(BigDecimal.valueOf(0.3)) : BigDecimal.ZERO,
-                objectPropertiesMatch,
-                this.messageSource.getMessage(objectPropertiesMatch ?
-                    "criterium.object.properties.match" : "criterium.object.properties.mismatch", null, locale)
-            ));
-
-            // Compare data property hierarchies (30% of points)
-            boolean dataPropertiesMatch = true;
-            for (OWLDataProperty prop : solution.getDataPropertiesInSignature()) {
-                if (!areEquivalentDataPropertyHierarchies(prop, submittedReasoner, solutionReasoner)) {
-                    dataPropertiesMatch = false;
-                    break;
-                }
-            }
-            criteria.add(new CriterionDto(
-                this.messageSource.getMessage("criterium.data.properties", null, locale),
-                dataPropertiesMatch ? points.multiply(BigDecimal.valueOf(0.3)) : BigDecimal.ZERO,
-                dataPropertiesMatch,
-                this.messageSource.getMessage(dataPropertiesMatch ?
-                    "criterium.data.properties.match" : "criterium.data.properties.mismatch", null, locale)
-            ));
-
-        } catch (Exception e) {
-            LOG.error("Error during detailed feedback generation", e);
-            criteria.add(new CriterionDto(
-                this.messageSource.getMessage("criterium.error", null, locale),
-                BigDecimal.ZERO,
-                false,
-                e.getMessage()
-            ));
         }
     }
 }
