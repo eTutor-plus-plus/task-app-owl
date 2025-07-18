@@ -132,8 +132,10 @@ public class EvaluationService {
 
             // Handle different evaluation modes
             switch (submission.mode()) {
-                case RUN -> feedback = this.messageSource.getMessage("owl.submission.run",
-                    new Object[]{submission.submission().input()}, locale);
+                case RUN -> {
+                    points = BigDecimal.ZERO;
+                    feedback = "";
+                }
                 case DIAGNOSE -> {
 
                     switch (correctness) {
@@ -270,7 +272,7 @@ public class EvaluationService {
                 false,
                 e.getMessage()
             ));
-            feedback = this.messageSource.getMessage("error.syntax", null, locale);
+            feedback = this.messageSource.getMessage("criterium.syntax.invalid", null, locale);
         }
 
         return new GradingDto(task.getMaxPoints(), points, feedback, criteria);
