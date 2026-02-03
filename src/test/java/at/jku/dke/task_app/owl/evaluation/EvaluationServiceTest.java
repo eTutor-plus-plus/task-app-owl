@@ -38,7 +38,7 @@ class EvaluationServiceTest {
 
         var taskGroup = taskGroupRepository.save(new OWLTaskGroup(1L, TaskStatus.APPROVED));
         var task = taskRepository.save(new OWLTask(1L, BigDecimal.TEN, TaskStatus.APPROVED, taskGroup,
-            "Class: Person\nSubClassOf: Human\nDisjointWith: Animal"));
+            "Class: Person\nSubClassOf: Human\nDisjointWith: Animal", "Person=3, Human=2, Animal=1", 1));
         this.taskId = task.getId();
     }
 

@@ -16,6 +16,7 @@ import org.semanticweb.owlapi.model.*;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.reasoner.OWLReasonerFactory;
 import org.semanticweb.owlapi.reasoner.OWLReasonerRuntimeException;
+import org.semanticweb.owlapi.util.SimpleShortFormProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -93,6 +94,19 @@ public class EvaluationService {
             // Compare ontologies
             OntologyComparisonResult ontologyComparisonResult = compareOntologies(submittedOntology, solutionOntology);
 
+            // fill the ontologyComparisonResult's pointsPerClass map storing all classes/individuals and their points
+            String[] entries = task.getPointsPerClass().split(",");
+
+            for (String entry : entries) {
+                String[] keyValue = entry.split("=");
+
+                String key = keyValue[0].trim();
+                int value = Integer.parseInt(keyValue[1].trim());
+
+                assert ontologyComparisonResult != null;
+                ontologyComparisonResult.pointsPerClass.put(key, value);
+            }
+
             // Prepare feedback message parts
             assert ontologyComparisonResult != null;
             String submissionConsistencyMessage = this.messageSource.getMessage(ontologyComparisonResult.submittedIsConsistent ? "criterium.consistency.consistent" : "criterium.consistency.inconsistent", null, locale);
@@ -110,17 +124,17 @@ public class EvaluationService {
                 }
             }
 
-            StringBuilder redundantAxiomsMessage;
-            if (ontologyComparisonResult.redundantAxioms.isEmpty()) {
-                redundantAxiomsMessage = new StringBuilder(this.messageSource.getMessage("owl.submission.not-redundant", null, locale));
+            StringBuilder wrongAxiomsMessage;
+            if (ontologyComparisonResult.wrongAxioms.isEmpty()) {
+                wrongAxiomsMessage = new StringBuilder(this.messageSource.getMessage("owl.submission.not-wrong", null, locale));
             } else {
-                redundantAxiomsMessage = new StringBuilder(this.messageSource.getMessage("owl.submission.redundant", null, locale));
-                for (OWLAxiom ax : ontologyComparisonResult.redundantAxioms) {
-                    redundantAxiomsMessage.append("\n").append(" [").append(renderer.render(ax)).append("] ");
+                wrongAxiomsMessage = new StringBuilder(this.messageSource.getMessage("owl.submission.wrong", null, locale));
+                for (OWLAxiom ax : ontologyComparisonResult.wrongAxioms) {
+                    wrongAxiomsMessage.append("\n").append(" [").append(renderer.render(ax)).append("] ");
                 }
             }
 
-            points = calculatePoints(ontologyComparisonResult, task.getMaxPoints());
+            points = calculatePoints(ontologyComparisonResult, task.getMaxPoints(), task.getPointsPerRedundantAxiom());
             int correctness;
             if (points.compareTo(task.getMaxPoints()) >= 0) {
                 correctness = 2;
@@ -135,6 +149,22 @@ public class EvaluationService {
                 case RUN -> {
                     points = BigDecimal.ZERO;
                     feedback = "";
+
+                    if (!ontologyComparisonResult.setOfWrongIdentifiers.isEmpty()) {
+                        feedback += "\n"
+                            + this.messageSource.getMessage("owl.submission.invalid-identifiers", null, locale)
+                            + " ["
+                            + String.join(", ", ontologyComparisonResult.setOfWrongIdentifiers)
+                            + "].";
+                    }
+
+                    // Add legal identifier criterion
+                    criteria.add(new CriterionDto(
+                        this.messageSource.getMessage("criterium.identifier", null, locale),
+                        null,
+                        ontologyComparisonResult.correctIdentifiers,
+                        ontologyComparisonResult.correctIdentifiers ? this.messageSource.getMessage("criterium.identifier.valid", null, locale) : this.messageSource.getMessage("criterium.identifier.invalid", null, locale)
+                    ));
                 }
                 case DIAGNOSE -> {
 
@@ -155,6 +185,14 @@ public class EvaluationService {
 
                     LOG.info("Feedback level is {}", submission.feedbackLevel());
 
+                    // Add legal identifier criterion
+                    criteria.add(new CriterionDto(
+                        this.messageSource.getMessage("criterium.identifier", null, locale),
+                        null,
+                        ontologyComparisonResult.correctIdentifiers,
+                        ontologyComparisonResult.correctIdentifiers ? this.messageSource.getMessage("criterium.identifier.valid", null, locale) : this.messageSource.getMessage("criterium.identifier.invalid", null, locale)
+                    ));
+
                     if (submission.feedbackLevel() > 0) {
                         // Little feedback
                         // Add consistency criterion
@@ -169,27 +207,58 @@ public class EvaluationService {
                         // Some feedback
                         // Determine if there are any wrong classes or individuals
                         boolean correctClasses = ontologyComparisonResult.incompleteClasses.isEmpty()
-                            && ontologyComparisonResult.redundantClasses.isEmpty()
+                            && ontologyComparisonResult.wrongClasses.isEmpty()
                             && ontologyComparisonResult.missingClasses.isEmpty();
                         boolean correctIndividuals = ontologyComparisonResult.incompleteIndividuals.isEmpty()
-                            && ontologyComparisonResult.redundantIndividuals.isEmpty()
+                            && ontologyComparisonResult.wrongIndividuals.isEmpty()
                             && ontologyComparisonResult.missingIndividuals.isEmpty();
+
+                        // Prepare sets for showing points in criterion
+                        Set<OWLClass> wrongClasses = new HashSet<>(ontologyComparisonResult.incompleteClasses);
+                        wrongClasses.addAll(ontologyComparisonResult.wrongClasses);
+                        wrongClasses.addAll(ontologyComparisonResult.missingClasses);
+
+                        Set<OWLIndividual> wrongIndividuals = new HashSet<>(ontologyComparisonResult.incompleteIndividuals);
+                        wrongIndividuals.addAll(ontologyComparisonResult.wrongIndividuals);
+                        wrongIndividuals.addAll(ontologyComparisonResult.missingIndividuals);
+
+                        BigDecimal pointsDeductedForClasses = BigDecimal.ZERO;
+                        BigDecimal pointsDeductedForIndividuals = BigDecimal.ZERO;
+
+                        for (OWLClass cls : wrongClasses) {
+                            // if no points were defined for a class, no points are subtracted
+                            pointsDeductedForClasses = pointsDeductedForClasses.add(BigDecimal.valueOf(ontologyComparisonResult.pointsPerClass.getOrDefault(cls.getIRI().getShortForm(), 0)));
+                        }
+
+                        for (OWLIndividual individual : wrongIndividuals) {
+                            // if no points were defined for an individual, no points are subtracted
+                            pointsDeductedForIndividuals = pointsDeductedForIndividuals.add(BigDecimal.valueOf(ontologyComparisonResult.pointsPerClass.getOrDefault(individual.asOWLNamedIndividual().getIRI().getShortForm(), 0)));
+                        }
 
                         // Add wrong classes and individuals criterion
                         criteria.add(new CriterionDto(
                             this.messageSource.getMessage("criterium.classes", null, locale),
-                            null,
+                            pointsDeductedForClasses.compareTo(BigDecimal.ZERO) > 0 ? pointsDeductedForClasses.multiply(BigDecimal.valueOf(-1)) : null,
                             correctClasses,
                             correctClasses ? this.messageSource.getMessage("criterium.classes.correct", null, locale) : this.messageSource.getMessage("criterium.classes.wrong", null, locale)
                         ));
+                        // Only show individual-criterion if there are any individuals in the solution ontology
+                        if (!solutionOntology.getIndividualsInSignature().isEmpty()) {
+                            criteria.add(new CriterionDto(
+                                this.messageSource.getMessage("criterium.individuals", null, locale),
+                                pointsDeductedForIndividuals.compareTo(BigDecimal.ZERO) > 0 ? pointsDeductedForIndividuals.multiply(BigDecimal.valueOf(-1)) : null,
+                                correctIndividuals,
+                                correctIndividuals ? this.messageSource.getMessage("criterium.individuals.correct", null, locale) : this.messageSource.getMessage("criterium.individuals.wrong", null, locale)
+                            ));
+                        }
                         criteria.add(new CriterionDto(
-                            this.messageSource.getMessage("criterium.individuals", null, locale),
-                            null,
-                            correctIndividuals,
-                            correctIndividuals ? this.messageSource.getMessage("criterium.individuals.correct", null, locale) : this.messageSource.getMessage("criterium.individuals.wrong", null, locale)
+                            this.messageSource.getMessage("criterium.redundantAxioms", null, locale),
+                            !ontologyComparisonResult.redundantAxioms.isEmpty() ? BigDecimal.valueOf(-1L * ontologyComparisonResult.redundantAxioms.size() * task.getPointsPerRedundantAxiom()) : null,
+                            ontologyComparisonResult.redundantAxioms.isEmpty(),
+                            ontologyComparisonResult.redundantAxioms.isEmpty() ? this.messageSource.getMessage("criterium.redundantAxioms.correct", null, locale) : this.messageSource.getMessage("criterium.redundantAxioms.wrong", null, locale)
                         ));
 
-                        // Give out the incomplete, redundant and missing classes
+                        // Give out the incomplete, wrong and missing classes
                         if (!ontologyComparisonResult.incompleteClasses.isEmpty()) {
                             feedback += "\n"
                                 + this.messageSource.getMessage("owl.submission.incomplete-classes", null, locale)
@@ -197,11 +266,11 @@ public class EvaluationService {
                                 + ontologyComparisonResult.incompleteClasses.stream().map(cls -> cls.getIRI().getShortForm()).collect(Collectors.joining(", "))
                                 + "].";
                         }
-                        if (!ontologyComparisonResult.redundantClasses.isEmpty()) {
+                        if (!ontologyComparisonResult.wrongClasses.isEmpty()) {
                             feedback += "\n"
-                                + this.messageSource.getMessage("owl.submission.redundant-classes", null, locale)
+                                + this.messageSource.getMessage("owl.submission.wrong-classes", null, locale)
                                 + " ["
-                                + ontologyComparisonResult.redundantClasses.stream().map(cls -> cls.getIRI().getShortForm()).collect(Collectors.joining(", "))
+                                + ontologyComparisonResult.wrongClasses.stream().map(cls -> cls.getIRI().getShortForm()).collect(Collectors.joining(", "))
                                 + "].";
                         }
                         if (!ontologyComparisonResult.missingClasses.isEmpty()) {
@@ -212,7 +281,7 @@ public class EvaluationService {
                                 + "].";
                         }
 
-                        // Give out the incomplete, redundant and missing individuals
+                        // Give out the incomplete, wrong and missing individuals
                         if (!ontologyComparisonResult.incompleteIndividuals.isEmpty()) {
                             feedback += "\n"
                                 + this.messageSource.getMessage("owl.submission.incomplete-individuals", null, locale)
@@ -220,11 +289,11 @@ public class EvaluationService {
                                 + ontologyComparisonResult.incompleteIndividuals.stream().map(ind -> ind.asOWLNamedIndividual().getIRI().getShortForm()).collect(Collectors.joining(", "))
                                 + "].";
                         }
-                        if (!ontologyComparisonResult.redundantIndividuals.isEmpty()) {
+                        if (!ontologyComparisonResult.wrongIndividuals.isEmpty()) {
                             feedback += "\n"
-                                + this.messageSource.getMessage("owl.submission.redundant-individuals", null, locale)
+                                + this.messageSource.getMessage("owl.submission.wrong-individuals", null, locale)
                                 + " ["
-                                + ontologyComparisonResult.redundantIndividuals.stream().map(ind -> ind.asOWLNamedIndividual().getIRI().getShortForm()).collect(Collectors.joining(", "))
+                                + ontologyComparisonResult.wrongIndividuals.stream().map(ind -> ind.asOWLNamedIndividual().getIRI().getShortForm()).collect(Collectors.joining(", "))
                                 + "].";
                         }
                         if (!ontologyComparisonResult.missingIndividuals.isEmpty()) {
@@ -234,14 +303,25 @@ public class EvaluationService {
                                 + ontologyComparisonResult.missingIndividuals.stream().map(ind -> ind.asOWLNamedIndividual().getIRI().getShortForm()).collect(Collectors.joining(", "))
                                 + "].";
                         }
+
+                        renderer.setShortFormProvider(new SimpleShortFormProvider());
+
+                        // Give out redundant axioms
+                        if (!ontologyComparisonResult.redundantAxioms.isEmpty()) {
+                            feedback += "\n"
+                                + this.messageSource.getMessage("owl.submission.redundant-axioms", null, locale)
+                                + " ["
+                                + ontologyComparisonResult.redundantAxioms.stream().map(renderer::render).collect(Collectors.joining(", "))
+                                + "].";
+                        }
                     }
                     if (submission.feedbackLevel() > 2) {
                         // Much feedback
                         if (!ontologyComparisonResult.missingAxioms.isEmpty()) {
                             feedback += "\n" + missingAxiomsMessage;
                         }
-                        if (!ontologyComparisonResult.redundantAxioms.isEmpty()) {
-                            feedback += "\n" + redundantAxiomsMessage;
+                        if (!ontologyComparisonResult.wrongAxioms.isEmpty()) {
+                            feedback += "\n" + wrongAxiomsMessage;
                         }
                     }
                 }
@@ -278,7 +358,7 @@ public class EvaluationService {
         return new GradingDto(task.getMaxPoints(), points, feedback, criteria);
     }
 
-    private static BigDecimal calculatePoints(OntologyComparisonResult ontologyComparisonResult, BigDecimal maxPoints) {
+    private static BigDecimal calculatePoints(OntologyComparisonResult ontologyComparisonResult, BigDecimal maxPoints, int pointsPerAxiom) {
 
         BigDecimal points = maxPoints;
 
@@ -287,18 +367,30 @@ public class EvaluationService {
         // No points for inconsistent submissions
         if(!ontologyComparisonResult.submittedIsConsistent) return BigDecimal.ZERO;
 
-        BigDecimal pointsPerClass = maxPoints.divide(BigDecimal.valueOf(ontologyComparisonResult.classesInSolution.size() + ontologyComparisonResult.individualsInSolution.size()), 2, RoundingMode.HALF_UP);
-
-        // Subtract points for wrong classes and individuals, including ones that are missing/redundant
+        // Subtract points for wrong classes and individuals, including ones that are missing
         Set<OWLClass> wrongClasses = new HashSet<>(ontologyComparisonResult.incompleteClasses);
-        wrongClasses.addAll(ontologyComparisonResult.redundantClasses);
+        wrongClasses.addAll(ontologyComparisonResult.wrongClasses);
         wrongClasses.addAll(ontologyComparisonResult.missingClasses);
 
         Set<OWLIndividual> wrongIndividuals = new HashSet<>(ontologyComparisonResult.incompleteIndividuals);
-        wrongIndividuals.addAll(ontologyComparisonResult.redundantIndividuals);
+        wrongIndividuals.addAll(ontologyComparisonResult.wrongIndividuals);
         wrongIndividuals.addAll(ontologyComparisonResult.missingIndividuals);
 
-        points = points.subtract(pointsPerClass.multiply(BigDecimal.valueOf(wrongClasses.size() + wrongIndividuals.size())));
+        int subtract;
+        for (OWLClass cls : wrongClasses) {
+            // if no points were defined for a class, no points are subtracted
+            subtract = ontologyComparisonResult.pointsPerClass.getOrDefault(cls.getIRI().getShortForm(), 0);
+            points = points.subtract(BigDecimal.valueOf(subtract));
+        }
+
+        for (OWLIndividual individual : wrongIndividuals) {
+            // if no points were defined for an individual, no points are subtracted
+            subtract = ontologyComparisonResult.pointsPerClass.getOrDefault(individual.asOWLNamedIndividual().getIRI().getShortForm(), 0);
+            points = points.subtract(BigDecimal.valueOf(subtract));
+        }
+
+        // Subtract points for redundant axioms
+        points = points.subtract(BigDecimal.valueOf((long) ontologyComparisonResult.redundantAxioms.size() * pointsPerAxiom));
 
         points = points.setScale(0, RoundingMode.FLOOR); // Always round down
 
@@ -344,6 +436,24 @@ public class EvaluationService {
 
     private OntologyComparisonResult compareOntologies(OWLOntology submittedOntology, OWLOntology solutionOntology) {
         try {
+            OntologyComparisonResult result = new OntologyComparisonResult();
+
+            // Check for illegal identifiers
+            Set<String> legalIdentifiers = solutionOntology.getClassesInSignature().stream().map(OWLClass::getIRI).map(IRI::getShortForm).collect(Collectors.toSet());
+            legalIdentifiers.addAll(solutionOntology.getIndividualsInSignature().stream().map(OWLIndividual::asOWLNamedIndividual).map(OWLNamedIndividual::getIRI).map(IRI::getShortForm).collect(Collectors.toSet()));
+            for (OWLClass cls : submittedOntology.getClassesInSignature()) {
+                if (!legalIdentifiers.contains(cls.getIRI().getShortForm())) {
+                    result.correctIdentifiers = false;
+                    result.setOfWrongIdentifiers.add(cls.getIRI().getShortForm());
+                }
+            }
+            for (OWLIndividual ind : submittedOntology.getIndividualsInSignature()) {
+                if (!legalIdentifiers.contains(ind.asOWLNamedIndividual().getIRI().getShortForm())) {
+                    result.correctIdentifiers = false;
+                    result.setOfWrongIdentifiers.add(ind.asOWLNamedIndividual().getIRI().getShortForm());
+                }
+            }
+
             OWLReasonerFactory factory = new Reasoner.ReasonerFactory();
             OWLReasoner subReasoner = factory.createReasoner(submittedOntology);
             OWLReasoner solReasoner = factory.createReasoner(solutionOntology);
@@ -360,31 +470,29 @@ public class EvaluationService {
                 solIsConsistent = false;
             }
 
-            OntologyComparisonResult result = new OntologyComparisonResult();
-
             // Save classes and individuals in solution for calculating points later
             result.classesInSolution.addAll(solutionOntology.getClassesInSignature());
             LOG.info("Number of classes in solution: {}", result.classesInSolution);
             result.individualsInSolution.addAll(solutionOntology.getIndividualsInSignature());
             LOG.info("Number of individuals in solution: {}", result.individualsInSolution);
 
-            // Save redundant and missing classes
-            result.redundantClasses.addAll(submittedOntology.getClassesInSignature());
-            result.redundantClasses.removeAll(solutionOntology.getClassesInSignature());
-            LOG.info("Redundant classes: {}", result.redundantClasses);
+            // Save wrong and missing classes
+            result.wrongClasses.addAll(submittedOntology.getClassesInSignature());
+            result.wrongClasses.removeAll(solutionOntology.getClassesInSignature());
+            LOG.info("Redundant classes: {}", result.wrongClasses);
 
             result.missingClasses.addAll(solutionOntology.getClassesInSignature());
             result.missingClasses.removeAll(submittedOntology.getClassesInSignature());
             LOG.info("Missing classes: {}", result.missingClasses);
 
-            // Save redundant and missing individuals
+            // Save wrong and missing individuals
             result.missingIndividuals.addAll(solutionOntology.getIndividualsInSignature());
             result.missingIndividuals.removeAll(submittedOntology.getIndividualsInSignature());
             LOG.info("Missing individuals: {}", result.missingIndividuals);
 
-            result.redundantIndividuals.addAll(submittedOntology.getIndividualsInSignature());
-            result.redundantIndividuals.removeAll(solutionOntology.getIndividualsInSignature());
-            LOG.info("Redundant individuals: {}", result.redundantIndividuals);
+            result.wrongIndividuals.addAll(submittedOntology.getIndividualsInSignature());
+            result.wrongIndividuals.removeAll(solutionOntology.getIndividualsInSignature());
+            LOG.info("Redundant individuals: {}", result.wrongIndividuals);
 
             result.submittedIsConsistent = subIsConsistent;
             result.solutionIsConsistent = solIsConsistent;
@@ -401,16 +509,19 @@ public class EvaluationService {
             LOG.info("Solution ontology axioms:");
             solutionAxioms.forEach(ax -> LOG.info(ax.toString()));
 
+            // Check for redundancy in submitted ontology
+            result.redundantAxioms.addAll(checkForRedundancy(submittedAxioms, factory));
+
             // Check mutual entailment
             // Store non-entailed axioms for detailed feedback
             for (OWLAxiom ax : submittedAxioms) {
                 if (!solReasoner.isEntailed(ax)) {
-                    result.redundantAxioms.add(ax);
+                    result.wrongAxioms.add(ax);
                     result.incompleteClasses.addAll(ax.getClassesInSignature());
                     result.incompleteIndividuals.addAll(ax.getIndividualsInSignature());
                     LOG.info("Redundant axiom: {}", ax);
-                    LOG.info("Classes involved in redundant axiom: {}", ax.getClassesInSignature());
-                    LOG.info("Individuals involved in redundant axiom: {}", ax.getIndividualsInSignature());
+                    LOG.info("Classes involved in wrong axiom: {}", ax.getClassesInSignature());
+                    LOG.info("Individuals involved in wrong axiom: {}", ax.getIndividualsInSignature());
                 }
             }
 
@@ -427,6 +538,9 @@ public class EvaluationService {
 
             LOG.info("Wrong submitted classes: {}", result.incompleteClasses);
 
+            subReasoner.dispose();
+            solReasoner.dispose();
+
             return result;
 
         } catch (OWLReasonerRuntimeException e) {
@@ -435,24 +549,58 @@ public class EvaluationService {
         }
     }
 
+    private Set<OWLAxiom> checkForRedundancy(Set<OWLAxiom> submittedAxioms, OWLReasonerFactory factory) {
+        // Remove each submitted axiom from a copy of the set of submitted axioms and then check if the set is still entailed by the new reasoner
+        OWLOntologyManager tempManager = OWLManager.createOWLOntologyManager();
+        OWLOntology temp;
+        Set<OWLAxiom> tempAxioms = new HashSet<>();
+        OWLReasoner reasoner;
+        Set<OWLAxiom> redundantAxioms = new HashSet<>();
+
+        try {
+            OWLOntology subOntology = tempManager.createOntology(submittedAxioms);
+            OWLReasoner subReasoner = factory.createReasoner(subOntology);
+
+            for (OWLAxiom ax : submittedAxioms) {
+
+                if (ax.isOfType(AxiomType.DECLARATION)) continue;
+
+                tempAxioms.addAll(submittedAxioms);
+                tempAxioms.remove(ax);
+                temp = tempManager.createOntology(tempAxioms);
+                reasoner = factory.createReasoner(temp);
+                if (reasoner.isEntailed(submittedAxioms) && subReasoner.isEntailed(tempAxioms)) redundantAxioms.add(ax);
+                reasoner.dispose();
+            }
+        } catch (OWLOntologyCreationException e) {
+            LOG.error("Failed to create temporary ontology", e);
+        }
+        return redundantAxioms;
+    }
+
     private static class OntologyComparisonResult {
 
         private boolean submittedIsConsistent;
         private boolean solutionIsConsistent;
-        private final Set<OWLAxiom> redundantAxioms = new HashSet<>();
+        private final Set<OWLAxiom> wrongAxioms = new HashSet<>();
         private final Set<OWLAxiom> missingAxioms = new HashSet<>();
         private final Set<OWLClass> incompleteClasses = new HashSet<>();
-        private final Set<OWLClass> redundantClasses = new HashSet<>();
+        private final Set<OWLClass> wrongClasses = new HashSet<>();
         private final Set<OWLClass> missingClasses = new HashSet<>();
         private final Set<OWLClass> classesInSolution = new HashSet<>();
         private final Set<OWLIndividual> incompleteIndividuals = new HashSet<>();
         private final Set<OWLIndividual> missingIndividuals = new HashSet<>();
-        private final Set<OWLIndividual> redundantIndividuals = new HashSet<>();
+        private final Set<OWLIndividual> wrongIndividuals = new HashSet<>();
         private final Set<OWLIndividual> individualsInSolution = new HashSet<>();
+        private final Map<String, Integer> pointsPerClass = new HashMap<>();
+        private final Set<OWLAxiom> redundantAxioms = new HashSet<>();
+        private boolean correctIdentifiers;
+        private final Set<String> setOfWrongIdentifiers = new HashSet<>();
 
         public OntologyComparisonResult() {
             this.submittedIsConsistent = false;
             this.solutionIsConsistent = false;
+            this.correctIdentifiers = true;
         }
     }
 }

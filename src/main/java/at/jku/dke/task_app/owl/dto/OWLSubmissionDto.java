@@ -5,6 +5,6 @@ import jakarta.validation.constraints.Size;
 
 public record OWLSubmissionDto(
     @NotNull
-    @Size(max = 10000)
+    @Size(max = 30000)
     String input
 ) {}

@@ -15,7 +15,7 @@ class OWLTaskTest {
         final String expected = "Class: Car\nSubClassOf: Vehicle\nDisjointWith: Bike";
 
         // Act
-        var task = new OWLTask(expected);
+        var task = new OWLTask(expected, "Person=3, Human=2, Animal=1", 1);
         String actual = task.getSolution();
 
         // Assert
@@ -32,7 +32,7 @@ class OWLTaskTest {
         taskGroup.setId(55L);
 
         // Act
-        var task = new OWLTask(maxPoints, status, taskGroup, expected);
+        var task = new OWLTask(maxPoints, status, taskGroup, expected, "Person=3, Human=2, Animal=1", 1);
         String actualSolution = task.getSolution();
         BigDecimal actualMaxPoints = task.getMaxPoints();
         TaskStatus actualStatus = task.getStatus();
@@ -56,7 +56,7 @@ class OWLTaskTest {
         final long id = 1L;
 
         // Act
-        var task = new OWLTask(id, maxPoints, status, taskGroup, expected);
+        var task = new OWLTask(id, maxPoints, status, taskGroup, expected, "Person=3, Human=2, Animal=1", 1);
         long actualId = task.getId();
         String actualSolution = task.getSolution();
         BigDecimal actualMaxPoints = task.getMaxPoints();

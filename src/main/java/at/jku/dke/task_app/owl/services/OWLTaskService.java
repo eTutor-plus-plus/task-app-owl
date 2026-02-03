@@ -39,7 +39,7 @@ public class OWLTaskService extends BaseTaskInGroupService<OWLTask, OWLTaskGroup
     protected OWLTask createTask(long id, ModifyTaskDto<ModifyOWLTaskDto> modifyTaskDto) {
         if (!modifyTaskDto.taskType().equals("owl"))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid task type.");
-        return new OWLTask(modifyTaskDto.additionalData().solution());
+        return new OWLTask(modifyTaskDto.additionalData().solution(), modifyTaskDto.additionalData().pointsPerClass(), modifyTaskDto.additionalData().pointsPerRedundantAxiom());
     }
 
     @Override
@@ -47,6 +47,8 @@ public class OWLTaskService extends BaseTaskInGroupService<OWLTask, OWLTaskGroup
         if (!modifyTaskDto.taskType().equals("owl"))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid task type.");
         task.setSolution(modifyTaskDto.additionalData().solution());
+        task.setPointsPerClass(modifyTaskDto.additionalData().pointsPerClass());
+        task.setPointsPerRedundantAxiom(modifyTaskDto.additionalData().pointsPerRedundantAxiom());
     }
 
     @Override
