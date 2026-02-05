@@ -441,6 +441,9 @@ public class EvaluationService {
             // Check for illegal identifiers
             Set<String> legalIdentifiers = solutionOntology.getClassesInSignature().stream().map(OWLClass::getIRI).map(IRI::getShortForm).collect(Collectors.toSet());
             legalIdentifiers.addAll(solutionOntology.getIndividualsInSignature().stream().map(OWLIndividual::asOWLNamedIndividual).map(OWLNamedIndividual::getIRI).map(IRI::getShortForm).collect(Collectors.toSet()));
+            legalIdentifiers.addAll(solutionOntology.getObjectPropertiesInSignature().stream().map(OWLObjectProperty::getIRI).map(IRI::getShortForm).collect(Collectors.toSet()));
+            legalIdentifiers.addAll(solutionOntology.getDataPropertiesInSignature().stream().map(OWLDataProperty::getIRI).map(IRI::getShortForm).collect(Collectors.toSet()));
+
             for (OWLClass cls : submittedOntology.getClassesInSignature()) {
                 if (!legalIdentifiers.contains(cls.getIRI().getShortForm())) {
                     result.correctIdentifiers = false;
@@ -451,6 +454,18 @@ public class EvaluationService {
                 if (!legalIdentifiers.contains(ind.asOWLNamedIndividual().getIRI().getShortForm())) {
                     result.correctIdentifiers = false;
                     result.setOfWrongIdentifiers.add(ind.asOWLNamedIndividual().getIRI().getShortForm());
+                }
+            }
+            for (OWLObjectProperty prop : submittedOntology.getObjectPropertiesInSignature()) {
+                if (!legalIdentifiers.contains(prop.getIRI().getShortForm())) {
+                    result.correctIdentifiers = false;
+                    result.setOfWrongIdentifiers.add(prop.getIRI().getShortForm());
+                }
+            }
+            for (OWLDataProperty prop : submittedOntology.getDataPropertiesInSignature()) {
+                if (!legalIdentifiers.contains(prop.getIRI().getShortForm())) {
+                    result.correctIdentifiers = false;
+                    result.setOfWrongIdentifiers.add(prop.getIRI().getShortForm());
                 }
             }
 
