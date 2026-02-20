@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -57,6 +58,8 @@ public class EvaluationService {
      */
     @Transactional
     public GradingDto evaluate(SubmitSubmissionDto<OWLSubmissionDto> submission) {
+        long startTime = System.nanoTime();
+
         // find task
         var task = this.taskRepository.findById(submission.taskId()).orElseThrow(() -> new EntityNotFoundException("Task " + submission.taskId() + " does not exist."));
 
@@ -202,6 +205,8 @@ public class EvaluationService {
                             ontologyComparisonResult.submittedIsConsistent,
                             submissionConsistencyMessage
                         ));
+                        // Is submitted ontology is inconsistent, abort early
+                        if (!ontologyComparisonResult.submittedIsConsistent) return new GradingDto(task.getMaxPoints(), points, feedback, criteria);
                     }
                     if (submission.feedbackLevel() > 1) {
                         // Some feedback
@@ -355,6 +360,11 @@ public class EvaluationService {
             feedback = this.messageSource.getMessage("criterium.syntax.invalid", null, locale);
         }
 
+        long endTime = System.nanoTime();
+        long duration = TimeUnit.NANOSECONDS.toMillis(endTime - startTime);
+
+        LOG.info("Execution took {} ms", duration);
+
         return new GradingDto(task.getMaxPoints(), points, feedback, criteria);
     }
 
@@ -473,23 +483,21 @@ public class EvaluationService {
             OWLReasoner subReasoner = factory.createReasoner(submittedOntology);
             OWLReasoner solReasoner = factory.createReasoner(solutionOntology);
 
-            // Check consistency first
-            boolean subIsConsistent = true;
-            boolean solIsConsistent = true;
-            if (!subReasoner.isConsistent()) {
-                LOG.error("Submitted ontology is inconsistent");
-                subIsConsistent = false;
-            }
-            if (!solReasoner.isConsistent()) {
-                LOG.error("Solution ontology is inconsistent");
-                solIsConsistent = false;
-            }
-
             // Save classes and individuals in solution for calculating points later
             result.classesInSolution.addAll(solutionOntology.getClassesInSignature());
             LOG.info("Number of classes in solution: {}", result.classesInSolution);
             result.individualsInSolution.addAll(solutionOntology.getIndividualsInSignature());
             LOG.info("Number of individuals in solution: {}", result.individualsInSolution);
+
+            // Check consistency
+            result.submittedIsConsistent = subReasoner.isConsistent();
+            LOG.error("Submitted ontology is consistent: {}", result.submittedIsConsistent);
+            result.solutionIsConsistent = solReasoner.isConsistent();
+            LOG.error("Solution ontology is consistent: {}", result.solutionIsConsistent);
+
+            if (!result.submittedIsConsistent || !result.solutionIsConsistent) {
+                return result;
+            }
 
             // Save wrong and missing classes
             result.wrongClasses.addAll(submittedOntology.getClassesInSignature());
@@ -509,11 +517,6 @@ public class EvaluationService {
             result.wrongIndividuals.removeAll(solutionOntology.getIndividualsInSignature());
             LOG.info("Redundant individuals: {}", result.wrongIndividuals);
 
-            result.submittedIsConsistent = subIsConsistent;
-            result.solutionIsConsistent = solIsConsistent;
-            if (!subIsConsistent || !solIsConsistent) {
-                return result;
-            }
 
             Set<OWLAxiom> submittedAxioms = submittedOntology.getAxioms();
             Set<OWLAxiom> solutionAxioms = solutionOntology.getAxioms();
