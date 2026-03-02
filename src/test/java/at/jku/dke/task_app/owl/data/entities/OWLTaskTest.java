@@ -15,7 +15,7 @@ class OWLTaskTest {
         final String expected = "Class: Car\nSubClassOf: Vehicle\nDisjointWith: Bike";
 
         // Act
-        var task = new OWLTask(expected, "Person=3, Human=2, Animal=1", 1);
+        var task = new OWLTask(expected, "Person=3, Human=2, Animal=1", 1, 1);
         String actual = task.getSolution();
 
         // Assert
@@ -28,21 +28,17 @@ class OWLTaskTest {
         final String expected = "Class: Car\nSubClassOf: Vehicle\nDisjointWith: Bike";
         final BigDecimal maxPoints = BigDecimal.TEN;
         final TaskStatus status = TaskStatus.APPROVED;
-        final OWLTaskGroup taskGroup = new OWLTaskGroup();
-        taskGroup.setId(55L);
 
         // Act
-        var task = new OWLTask(maxPoints, status, taskGroup, expected, "Person=3, Human=2, Animal=1", 1);
+        var task = new OWLTask(maxPoints, status, expected, "Person=3, Human=2, Animal=1", 1, 1);
         String actualSolution = task.getSolution();
         BigDecimal actualMaxPoints = task.getMaxPoints();
         TaskStatus actualStatus = task.getStatus();
-        OWLTaskGroup actualTaskGroup = task.getTaskGroup();
 
         // Assert
         assertEquals(expected, actualSolution);
         assertEquals(maxPoints, actualMaxPoints);
         assertEquals(status, actualStatus);
-        assertEquals(taskGroup, actualTaskGroup);
     }
 
     @Test
@@ -51,24 +47,20 @@ class OWLTaskTest {
         final String expected = "Class: Car\nSubClassOf: Vehicle\nDisjointWith: Bike";
         final BigDecimal maxPoints = BigDecimal.TEN;
         final TaskStatus status = TaskStatus.APPROVED;
-        final OWLTaskGroup taskGroup = new OWLTaskGroup();
-        taskGroup.setId(55L);
         final long id = 1L;
 
         // Act
-        var task = new OWLTask(id, maxPoints, status, taskGroup, expected, "Person=3, Human=2, Animal=1", 1);
+        var task = new OWLTask(id, maxPoints, status, expected, "Person=3, Human=2, Animal=1", 1, 1);
         long actualId = task.getId();
         String actualSolution = task.getSolution();
         BigDecimal actualMaxPoints = task.getMaxPoints();
         TaskStatus actualStatus = task.getStatus();
-        OWLTaskGroup actualTaskGroup = task.getTaskGroup();
 
         // Assert
         assertEquals(id, actualId);
         assertEquals(expected, actualSolution);
         assertEquals(maxPoints, actualMaxPoints);
         assertEquals(status, actualStatus);
-        assertEquals(taskGroup, actualTaskGroup);
     }
 
     @Test

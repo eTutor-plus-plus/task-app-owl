@@ -16,13 +16,11 @@ CREATE TABLE task
     id            BIGINT        NOT NULL,
     max_points    NUMERIC(7, 2) NOT NULL,
     status        TASK_STATUS   NOT NULL,
-    task_group_id BIGINT        NOT NULL,
     solution      VARCHAR       NOT NULL, -- custom column
     points_per_class VARCHAR NOT NULL, -- custom column
     points_per_redundant_axiom NUMERIC NOT NULL, -- custom column
-    CONSTRAINT task_pk PRIMARY KEY (id),
-    CONSTRAINT task_task_group_fk FOREIGN KEY (task_group_id) REFERENCES task_group (id)
-        ON DELETE CASCADE
+    points_per_undefined_class NUMERIC NOT NULL, -- custom column
+    CONSTRAINT task_pk PRIMARY KEY (id)
 );
 
 CREATE TABLE submission

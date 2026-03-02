@@ -2,9 +2,8 @@ package at.jku.dke.task_app.owl.services;
 
 import at.jku.dke.etutor.task_app.dto.ModifyTaskDto;
 import at.jku.dke.etutor.task_app.dto.TaskModificationResponseDto;
-import at.jku.dke.etutor.task_app.services.BaseTaskInGroupService;
+import at.jku.dke.etutor.task_app.services.BaseTaskService;
 import at.jku.dke.task_app.owl.data.entities.OWLTask;
-import at.jku.dke.task_app.owl.data.entities.OWLTaskGroup;
 import at.jku.dke.task_app.owl.data.repositories.OWLTaskGroupRepository;
 import at.jku.dke.task_app.owl.data.repositories.OWLTaskRepository;
 import at.jku.dke.task_app.owl.dto.ModifyOWLTaskDto;
@@ -19,7 +18,7 @@ import java.util.Locale;
  * This class provides methods for managing {@link OWLTask}s.
  */
 @Service
-public class OWLTaskService extends BaseTaskInGroupService<OWLTask, OWLTaskGroup, ModifyOWLTaskDto> {
+public class OWLTaskService extends BaseTaskService<OWLTask, ModifyOWLTaskDto> {
 
     private final MessageSource messageSource;
 
@@ -31,7 +30,7 @@ public class OWLTaskService extends BaseTaskInGroupService<OWLTask, OWLTaskGroup
      * @param messageSource       The message source.
      */
     public OWLTaskService(OWLTaskRepository repository, OWLTaskGroupRepository taskGroupRepository, MessageSource messageSource) {
-        super(repository, taskGroupRepository);
+        super(repository);
         this.messageSource = messageSource;
     }
 
@@ -39,7 +38,7 @@ public class OWLTaskService extends BaseTaskInGroupService<OWLTask, OWLTaskGroup
     protected OWLTask createTask(long id, ModifyTaskDto<ModifyOWLTaskDto> modifyTaskDto) {
         if (!modifyTaskDto.taskType().equals("owl"))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid task type.");
-        return new OWLTask(modifyTaskDto.additionalData().solution(), modifyTaskDto.additionalData().pointsPerClass(), modifyTaskDto.additionalData().pointsPerRedundantAxiom());
+        return new OWLTask(modifyTaskDto.additionalData().solution(), modifyTaskDto.additionalData().pointsPerClass(), modifyTaskDto.additionalData().pointsPerRedundantAxiom(), modifyTaskDto.additionalData().pointsPerUndefinedClass());
     }
 
     @Override
@@ -49,6 +48,7 @@ public class OWLTaskService extends BaseTaskInGroupService<OWLTask, OWLTaskGroup
         task.setSolution(modifyTaskDto.additionalData().solution());
         task.setPointsPerClass(modifyTaskDto.additionalData().pointsPerClass());
         task.setPointsPerRedundantAxiom(modifyTaskDto.additionalData().pointsPerRedundantAxiom());
+        task.setPointsPerUndefinedClass(modifyTaskDto.additionalData().pointsPerUndefinedClass());
     }
 
     @Override

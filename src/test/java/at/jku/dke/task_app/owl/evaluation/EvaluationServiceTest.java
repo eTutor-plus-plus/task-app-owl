@@ -5,7 +5,6 @@ import at.jku.dke.etutor.task_app.dto.SubmitSubmissionDto;
 import at.jku.dke.etutor.task_app.dto.TaskStatus;
 import at.jku.dke.task_app.owl.DatabaseSetupExtension;
 import at.jku.dke.task_app.owl.data.entities.OWLTask;
-import at.jku.dke.task_app.owl.data.entities.OWLTaskGroup;
 import at.jku.dke.task_app.owl.data.repositories.OWLTaskGroupRepository;
 import at.jku.dke.task_app.owl.data.repositories.OWLTaskRepository;
 import at.jku.dke.task_app.owl.dto.OWLSubmissionDto;
@@ -34,11 +33,9 @@ class EvaluationServiceTest {
     @BeforeEach
     void setUp() {
         taskRepository.deleteAll();
-        taskGroupRepository.deleteAll();
 
-        var taskGroup = taskGroupRepository.save(new OWLTaskGroup(1L, TaskStatus.APPROVED));
-        var task = taskRepository.save(new OWLTask(1L, BigDecimal.TEN, TaskStatus.APPROVED, taskGroup,
-            "Class: Person\nSubClassOf: Human\nDisjointWith: Animal", "Person=3, Human=2, Animal=1", 1));
+        var task = taskRepository.save(new OWLTask(1L, BigDecimal.TEN, TaskStatus.APPROVED,
+            "Class: Person\nSubClassOf: Human\nDisjointWith: Animal", "Person=3, Human=2, Animal=1", 1, 1));
         this.taskId = task.getId();
     }
 

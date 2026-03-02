@@ -9,5 +9,5 @@ import java.io.Serializable;
  *
  * @param solution The solution.
  */
-public record ModifyOWLTaskDto(@NotNull String solution, @NotNull String pointsPerClass, @NotNull int pointsPerRedundantAxiom) implements Serializable {
+public record ModifyOWLTaskDto(@NotNull String solution, @NotNull String pointsPerClass, @NotNull int pointsPerRedundantAxiom, @NotNull int pointsPerUndefinedClass) implements Serializable {
 }

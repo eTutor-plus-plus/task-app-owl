@@ -9,7 +9,6 @@ import at.jku.dke.task_app.owl.ClientSetupExtension;
 import at.jku.dke.task_app.owl.DatabaseSetupExtension;
 import at.jku.dke.task_app.owl.data.entities.OWLSubmission;
 import at.jku.dke.task_app.owl.data.entities.OWLTask;
-import at.jku.dke.task_app.owl.data.entities.OWLTaskGroup;
 import at.jku.dke.task_app.owl.data.repositories.OWLSubmissionRepository;
 import at.jku.dke.task_app.owl.data.repositories.OWLTaskGroupRepository;
 import at.jku.dke.task_app.owl.data.repositories.OWLTaskRepository;
@@ -57,8 +56,7 @@ class SubmissionControllerTest {
     void initDb() {
         this.repository.deleteAll();
 
-        var group = this.groupRepository.save(new OWLTaskGroup(1L, TaskStatus.APPROVED));
-        var task = this.repository.save(new OWLTask(1L, BigDecimal.TWO, TaskStatus.APPROVED, group, "Class: Person\nSubClassOf: Human\nDisjointWith: Animal", "Person=3, Human=2, Animal=1", 1));
+        var task = this.repository.save(new OWLTask(1L, BigDecimal.TWO, TaskStatus.APPROVED, "Class: Person\nSubClassOf: Human\nDisjointWith: Animal", "Person=3, Human=2, Animal=1", 1, 1));
         this.taskId = task.getId();
 
         var submission = new OWLSubmission("test-user", "test-id", task, "de", 3, SubmissionMode.SUBMIT, "Class: Person\nSubClassOf: Human\nDisjointWith: Animal");

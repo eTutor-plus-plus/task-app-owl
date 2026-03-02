@@ -1,6 +1,6 @@
 package at.jku.dke.task_app.owl.data.entities;
 
-import at.jku.dke.etutor.task_app.data.entities.BaseTaskInGroup;
+import at.jku.dke.etutor.task_app.data.entities.BaseTask;
 import at.jku.dke.etutor.task_app.dto.TaskStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -15,7 +15,7 @@ import java.math.BigDecimal;
  */
 @Entity
 @Table(name = "task")
-public class OWLTask extends BaseTaskInGroup<OWLTaskGroup> {
+public class OWLTask extends BaseTask {
 
     @NotNull
     @Size(max = 30000)
@@ -31,6 +31,10 @@ public class OWLTask extends BaseTaskInGroup<OWLTaskGroup> {
     @Column(name = "pointsPerRedundantAxiom", nullable = false)
     private int pointsPerRedundantAxiom;
 
+    @NotNull
+    @Column(name = "pointsPerUndefinedClass", nullable = false)
+    private int pointsPerUndefinedClass;
+
     /**
      * Creates a new instance of class {@link OWLTask}.
      */
@@ -42,10 +46,11 @@ public class OWLTask extends BaseTaskInGroup<OWLTaskGroup> {
      *
      * @param solution The solution ontology in Manchester syntax.
      */
-    public OWLTask(String solution, String pointsPerClass, int pointsPerRedundantAxiom) {
+    public OWLTask(String solution, String pointsPerClass, int pointsPerRedundantAxiom, int pointsPerUndefinedClass) {
         this.solution = solution;
         this.pointsPerClass = pointsPerClass;
         this.pointsPerRedundantAxiom = pointsPerRedundantAxiom;
+        this.pointsPerUndefinedClass = pointsPerUndefinedClass;
     }
 
     /**
@@ -53,14 +58,14 @@ public class OWLTask extends BaseTaskInGroup<OWLTaskGroup> {
      *
      * @param maxPoints The maximum points.
      * @param status    The status.
-     * @param taskGroup The task group.
      * @param solution  The solution ontology in Manchester syntax.
      */
-    public OWLTask(BigDecimal maxPoints, TaskStatus status, OWLTaskGroup taskGroup, String solution, String pointsPerClass, int pointsPerRedundantAxiom) {
-        super(maxPoints, status, taskGroup);
+    public OWLTask(BigDecimal maxPoints, TaskStatus status, String solution, String pointsPerClass, int pointsPerRedundantAxiom, int pointsPerUndefinedClass) {
+        super(maxPoints, status);
         this.solution = solution;
         this.pointsPerClass = pointsPerClass;
         this.pointsPerRedundantAxiom = pointsPerRedundantAxiom;
+        this.pointsPerUndefinedClass = pointsPerUndefinedClass;
     }
 
     /**
@@ -69,14 +74,14 @@ public class OWLTask extends BaseTaskInGroup<OWLTaskGroup> {
      * @param id        The identifier.
      * @param maxPoints The maximum points.
      * @param status    The status.
-     * @param taskGroup The task group.
      * @param solution  The solution ontology in Manchester syntax.
      */
-    public OWLTask(Long id, BigDecimal maxPoints, TaskStatus status, OWLTaskGroup taskGroup, String solution, String pointsPerClass, int pointsPerRedundantAxiom) {
-        super(id, maxPoints, status, taskGroup);
+    public OWLTask(Long id, BigDecimal maxPoints, TaskStatus status, String solution, String pointsPerClass, int pointsPerRedundantAxiom, int pointsPerUndefinedClass) {
+        super(id, maxPoints, status);
         this.solution = solution;
         this.pointsPerClass = pointsPerClass;
         this.pointsPerRedundantAxiom = pointsPerRedundantAxiom;
+        this.pointsPerUndefinedClass = pointsPerUndefinedClass;
     }
 
     /**
@@ -107,6 +112,15 @@ public class OWLTask extends BaseTaskInGroup<OWLTaskGroup> {
     }
 
     /**
+     * Gets the points deducted per undefined class.
+     *
+     * @return The points deducted per undefined class.
+     */
+    public int getPointsPerUndefinedClass() {
+        return pointsPerUndefinedClass;
+    }
+
+    /**
      * Sets the solution ontology in Manchester syntax.
      *
      * @param solution The solution ontology.
@@ -131,5 +145,14 @@ public class OWLTask extends BaseTaskInGroup<OWLTaskGroup> {
      */
     public void setPointsPerRedundantAxiom(int pointsPerRedundantAxiom) {
         this.pointsPerRedundantAxiom = pointsPerRedundantAxiom;
+    }
+
+    /**
+     * Sets the pointsPerUndefinedClass.
+     *
+     * @param pointsPerUndefinedClass The points per undefined class.
+     */
+    public void setPointsPerUndefinedClass(int pointsPerUndefinedClass) {
+        this.pointsPerUndefinedClass = pointsPerUndefinedClass;
     }
 }

@@ -6,7 +6,6 @@ import at.jku.dke.etutor.task_app.dto.TaskStatus;
 import at.jku.dke.task_app.owl.ClientSetupExtension;
 import at.jku.dke.task_app.owl.DatabaseSetupExtension;
 import at.jku.dke.task_app.owl.data.entities.OWLTask;
-import at.jku.dke.task_app.owl.data.entities.OWLTaskGroup;
 import at.jku.dke.task_app.owl.data.repositories.OWLTaskGroupRepository;
 import at.jku.dke.task_app.owl.data.repositories.OWLTaskRepository;
 import at.jku.dke.task_app.owl.dto.ModifyOWLTaskDto;
@@ -44,9 +43,7 @@ class TaskControllerTest {
     void initDb() {
         this.repository.deleteAll();
 
-        var group = this.groupRepository.save(new OWLTaskGroup(1L, TaskStatus.APPROVED));
-        this.taskGroupId = group.getId();
-        this.taskId = this.repository.save(new OWLTask(1L, BigDecimal.TWO, TaskStatus.APPROVED, group, "Class: Person\nSubClassOf: Human\nDisjointWith: Animal", "Person=3, Human=2, Animal=1", 1)).getId();
+        this.taskId = this.repository.save(new OWLTask(1L, BigDecimal.TWO, TaskStatus.APPROVED, "Class: Person\nSubClassOf: Human\nDisjointWith: Animal", "Person=3, Human=2, Animal=1", 1, 1)).getId();
     }
 
     //#region --- GET ---
@@ -105,7 +102,7 @@ class TaskControllerTest {
             .port(port)
             .header(AuthConstants.AUTH_TOKEN_HEADER_NAME, ClientSetupExtension.CRUD_API_KEY)
             .contentType(ContentType.JSON)
-            .body(new ModifyTaskDto<>(this.taskGroupId, BigDecimal.TEN, "owl", TaskStatus.APPROVED, new ModifyOWLTaskDto("Class: Student\nSubClassOf: Person\nDisjointWith: Teacher", "Person=3, Human=2, Animal=1", 1)))
+            .body(new ModifyTaskDto<>(this.taskGroupId, BigDecimal.TEN, "owl", TaskStatus.APPROVED, new ModifyOWLTaskDto("Class: Student\nSubClassOf: Person\nDisjointWith: Teacher", "Person=3, Human=2, Animal=1", 1, 1)))
             // WHEN
             .when()
             .post("/api/task/{id}", this.taskId + 2)
@@ -125,7 +122,7 @@ class TaskControllerTest {
             .port(port)
             .header(AuthConstants.AUTH_TOKEN_HEADER_NAME, ClientSetupExtension.CRUD_API_KEY)
             .contentType(ContentType.JSON)
-            .body(new ModifyTaskDto<>(this.taskGroupId, BigDecimal.TEN, "", TaskStatus.APPROVED, new ModifyOWLTaskDto("Class: Student\nSubClassOf: Person\nDisjointWith: Teacher", "Person=3, Human=2, Animal=1", 1)))
+            .body(new ModifyTaskDto<>(this.taskGroupId, BigDecimal.TEN, "", TaskStatus.APPROVED, new ModifyOWLTaskDto("Class: Student\nSubClassOf: Person\nDisjointWith: Teacher", "Person=3, Human=2, Animal=1", 1, 1)))
             // WHEN
             .when()
             .post("/api/task/{id}", this.taskId + 2)
@@ -156,7 +153,7 @@ class TaskControllerTest {
             .port(port)
             .header(AuthConstants.AUTH_TOKEN_HEADER_NAME, ClientSetupExtension.SUBMIT_API_KEY)
             .contentType(ContentType.JSON)
-            .body(new ModifyTaskDto<>(this.taskGroupId, BigDecimal.TEN, "owl", TaskStatus.APPROVED, new ModifyOWLTaskDto("Class: Student\nSubClassOf: Person\nDisjointWith: Teacher", "Person=3, Human=2, Animal=1", 1)))
+            .body(new ModifyTaskDto<>(this.taskGroupId, BigDecimal.TEN, "owl", TaskStatus.APPROVED, new ModifyOWLTaskDto("Class: Student\nSubClassOf: Person\nDisjointWith: Teacher", "Person=3, Human=2, Animal=1", 1, 1)))
             // WHEN
             .when()
             .post("/api/task/{id}", this.taskId + 2)
@@ -174,7 +171,7 @@ class TaskControllerTest {
             .port(port)
             .header(AuthConstants.AUTH_TOKEN_HEADER_NAME, ClientSetupExtension.CRUD_API_KEY)
             .contentType(ContentType.JSON)
-            .body(new ModifyTaskDto<>(this.taskGroupId, BigDecimal.TEN, "owl", TaskStatus.APPROVED, new ModifyOWLTaskDto("\"Class: Apple\\nSubClassOf: Fruit\\nDisjointWith: Orange\"", "Person=3, Human=2, Animal=1", 1)))
+            .body(new ModifyTaskDto<>(this.taskGroupId, BigDecimal.TEN, "owl", TaskStatus.APPROVED, new ModifyOWLTaskDto("\"Class: Apple\\nSubClassOf: Fruit\\nDisjointWith: Orange\"", "Person=3, Human=2, Animal=1", 1, 1)))
             // WHEN
             .when()
             .put("/api/task/{id}", this.taskId)
@@ -193,7 +190,7 @@ class TaskControllerTest {
             .port(port)
             .header(AuthConstants.AUTH_TOKEN_HEADER_NAME, ClientSetupExtension.CRUD_API_KEY)
             .contentType(ContentType.JSON)
-            .body(new ModifyTaskDto<>(this.taskGroupId, BigDecimal.TEN, "OWL", TaskStatus.APPROVED, new ModifyOWLTaskDto("Class: Apple\nSubClassOf: Fruit\nDisjointWith: Orange", "Person=3, Human=2, Animal=1", 1)))
+            .body(new ModifyTaskDto<>(this.taskGroupId, BigDecimal.TEN, "OWL", TaskStatus.APPROVED, new ModifyOWLTaskDto("Class: Apple\nSubClassOf: Fruit\nDisjointWith: Orange", "Person=3, Human=2, Animal=1", 1, 1)))
             // WHEN
             .when()
             .put("/api/task/{id}", this.taskId + 1)
@@ -209,7 +206,7 @@ class TaskControllerTest {
             .port(port)
             .header(AuthConstants.AUTH_TOKEN_HEADER_NAME, ClientSetupExtension.CRUD_API_KEY)
             .contentType(ContentType.JSON)
-            .body(new ModifyTaskDto<>(this.taskGroupId, BigDecimal.TEN, "sql", TaskStatus.APPROVED, new ModifyOWLTaskDto("Class: Apple\nSubClassOf: Fruit\nDisjointWith: Orange", "Person=3, Human=2, Animal=1", 1)))
+            .body(new ModifyTaskDto<>(this.taskGroupId, BigDecimal.TEN, "sql", TaskStatus.APPROVED, new ModifyOWLTaskDto("Class: Apple\nSubClassOf: Fruit\nDisjointWith: Orange", "Person=3, Human=2, Animal=1", 1, 1)))
             // WHEN
             .when()
             .put("/api/task/{id}", this.taskId)
@@ -240,7 +237,7 @@ class TaskControllerTest {
             .port(port)
             .header(AuthConstants.AUTH_TOKEN_HEADER_NAME, ClientSetupExtension.SUBMIT_API_KEY)
             .contentType(ContentType.JSON)
-            .body(new ModifyTaskDto<>(this.taskGroupId, BigDecimal.TEN, "owl", TaskStatus.APPROVED, new ModifyOWLTaskDto("Class: Apple\nSubClassOf: Fruit\nDisjointWith: Orange", "Person=3, Human=2, Animal=1", 1)))
+            .body(new ModifyTaskDto<>(this.taskGroupId, BigDecimal.TEN, "owl", TaskStatus.APPROVED, new ModifyOWLTaskDto("Class: Apple\nSubClassOf: Fruit\nDisjointWith: Orange", "Person=3, Human=2, Animal=1", 1, 1)))
             // WHEN
             .when()
             .put("/api/task/{id}", this.taskId)
@@ -298,7 +295,7 @@ class TaskControllerTest {
     @Test
     void mapToDto() {
         // Arrange
-        var task = new OWLTask("Class: Car\nSubClassOf: Vehicle\nDisjointWith: Bike", "Person=3, Human=2, Animal=1", 1);
+        var task = new OWLTask("Class: Car\nSubClassOf: Vehicle\nDisjointWith: Bike", "Person=3, Human=2, Animal=1", 1, 1);
 
         // Act
         var result = new TaskController(null).mapToDto(task);

@@ -24,7 +24,7 @@ public class TaskController extends BaseTaskController<OWLTask, OWLTaskDto, Modi
 
     @Override
     protected OWLTaskDto mapToDto(OWLTask task) {
-        return new OWLTaskDto(task.getSolution(), task.getPointsPerClass(), task.getPointsPerRedundantAxiom());
+        return new OWLTaskDto(task.getSolution(), task.getPointsPerClass(), task.getPointsPerRedundantAxiom(), task.getPointsPerUndefinedClass());
     }
 
 }
