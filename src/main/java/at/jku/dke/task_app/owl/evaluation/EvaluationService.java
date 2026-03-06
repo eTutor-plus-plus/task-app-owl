@@ -379,7 +379,7 @@ public class EvaluationService {
                 this.messageSource.getMessage("criterium.syntax", null, locale),
                 null,
                 false,
-                this.messageSource.getMessage("criterium.syntax.invalid", null, locale)
+                e.getMessage()
             ));
             feedback = this.messageSource.getMessage("owl.submission.incorrect", null, locale);
         }
@@ -464,7 +464,15 @@ public class EvaluationService {
             return ontology;
         } catch (OWLOntologyCreationException e) {
             LOG.error("Invalid Manchester syntax", e);
-            throw new OWLRuntimeException(e.getMessage());
+            String x = e.getMessage();
+            //find the keyword line and save the next number after it, which indicates the line where the error is
+            String line = x.substring(x.indexOf("line ") + 5);
+            line = line.substring(0, line.indexOf("column")-1);
+            int lineNumber = Integer.parseInt(line);
+            lineNumber = lineNumber - 6; // Subtract 6 because of the added header lines
+            String message = "Invalid Manchester Syntax. Error at line " + lineNumber + ".";
+
+            throw new OWLRuntimeException(message);
         }
     }
 
