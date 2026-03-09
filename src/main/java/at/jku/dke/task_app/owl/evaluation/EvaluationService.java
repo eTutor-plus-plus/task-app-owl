@@ -382,11 +382,32 @@ public class EvaluationService {
         } catch (OWLRuntimeException | OWLOntologyStorageException e) {
             LOG.error("Failed to parse Manchester syntax", e);
             LOG.info(e.getMessage());
+            String message = this.messageSource.getMessage("criterium.syntax.invalid", null, locale) + " ";
+            message += e.getMessage();
             criteria.add(new CriterionDto(
                 this.messageSource.getMessage("criterium.syntax", null, locale),
                 null,
                 false,
-                this.messageSource.getMessage("criterium.syntax.invalid", null, locale) + " " + e.getMessage()
+                message
+            ));
+            feedback = this.messageSource.getMessage("owl.submission.incorrect", null, locale);
+        } catch (OWLOntologyCreationException e) {
+            LOG.error("Failed to parse Manchester syntax", e);
+            LOG.info(e.getMessage());
+            String message = this.messageSource.getMessage("criterium.syntax.invalid", null, locale) + " ";
+
+            String x = e.getMessage();
+            //find the keyword line and save the next number after it, which indicates the line where the error is
+            String line = x.substring(x.indexOf("line ") + 5);
+            line = line.substring(0, line.indexOf("column")-1);
+            int lineNumber = Integer.parseInt(line);
+            lineNumber = lineNumber - 7; // Subtract 7 because of the added header lines
+            message += this.messageSource.getMessage("criterium.syntax.line", null, locale) + " " + lineNumber + ".";
+            criteria.add(new CriterionDto(
+                this.messageSource.getMessage("criterium.syntax", null, locale),
+                null,
+                false,
+                message
             ));
             feedback = this.messageSource.getMessage("owl.submission.incorrect", null, locale);
         }
@@ -470,40 +491,35 @@ public class EvaluationService {
     }
 
     // Parses Manchester Syntax String Input into OWL Ontology
-    public static OWLOntology parseManchesterSyntax(String manchesterSyntaxInput) {
+    public static OWLOntology parseManchesterSyntax(String manchesterSyntaxInput) throws OWLOntologyCreationException {
         OWLOntologyManager manager = OWLManager.createOWLOntologyManager();
 
-        try {
-            // Add required ontology headers
-            String completeOntology = """
-                Prefix: owl: <http://www.w3.org/2002/07/owl#>
-                Prefix: rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-                Prefix: rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                Prefix: xsd: <http://www.w3.org/2001/XMLSchema#>
-                Prefix: : <https://example.org/onto#>
+        // Add required ontology headers
+        String completeOntology = """
+            Prefix: owl: <http://www.w3.org/2002/07/owl#>
+            Prefix: rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+            Prefix: rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            Prefix: xsd: <http://www.w3.org/2001/XMLSchema#>
+            Prefix: : <https://example.org/onto#>
 
-                Ontology: <https://example.org/onto>
-                """ + manchesterSyntaxInput;
+            Ontology: <https://example.org/onto>
+            """ + manchesterSyntaxInput;
 
-            StringDocumentSource documentSource = new StringDocumentSource(
-                completeOntology,
-                IRI.create("https://example.org/onto"),
-                new ManchesterSyntaxDocumentFormat(),
-                "UTF-8"
-            );
+        StringDocumentSource documentSource = new StringDocumentSource(
+            completeOntology,
+            IRI.create("https://example.org/onto"),
+            new ManchesterSyntaxDocumentFormat(),
+            "UTF-8"
+        );
 
-            OWLOntology ontology = manager.loadOntologyFromOntologyDocument(documentSource);
+        OWLOntology ontology = manager.loadOntologyFromOntologyDocument(documentSource);
 
-            LOG.info("Successfully parsed ontology:");
-            LOG.info("Classes: {}", ontology.classesInSignature().collect(Collectors.toSet()));
-            LOG.info("Logical axioms: {}", ontology.logicalAxioms().collect(Collectors.toSet()));
-            LOG.info("All axioms: {}", ontology.axioms().collect(Collectors.toSet()));
+        LOG.info("Successfully parsed ontology:");
+        LOG.info("Classes: {}", ontology.classesInSignature().collect(Collectors.toSet()));
+        LOG.info("Logical axioms: {}", ontology.logicalAxioms().collect(Collectors.toSet()));
+        LOG.info("All axioms: {}", ontology.axioms().collect(Collectors.toSet()));
 
-            return ontology;
-        } catch (OWLOntologyCreationException e) {
-            LOG.error("Invalid Manchester syntax", e);
-            throw new OWLRuntimeException(e.getMessage());
-        }
+        return ontology;
     }
 
     private Set<String> checkForIllegalIdentifiers(OWLOntology solutionOntology, OWLOntology submittedOntology) {

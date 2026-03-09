@@ -43,7 +43,7 @@ public class OWLTaskService extends BaseTaskService<OWLTask, ModifyOWLTaskDto> {
         this.messageSource = messageSource;
     }
 
-    private static boolean[] checkSolutionOntology(ModifyTaskDto<ModifyOWLTaskDto> modifyTaskDto) {
+    private static boolean[] checkSolutionOntology(ModifyTaskDto<ModifyOWLTaskDto> modifyTaskDto) throws OWLOntologyCreationException {
         /*
         results array contents:
         [0] = true if ontology is consistent
@@ -117,6 +117,15 @@ public class OWLTaskService extends BaseTaskService<OWLTask, ModifyOWLTaskDto> {
 
         } catch (OWLRuntimeException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Manchester Syntax. " + e.getMessage());
+        } catch (OWLOntologyCreationException e) {
+            String x = e.getMessage();
+            //find the keyword line and save the next number after it, which indicates the line where the error is
+            String line = x.substring(x.indexOf("line ") + 5);
+            line = line.substring(0, line.indexOf("column")-1);
+            int lineNumber = Integer.parseInt(line);
+            lineNumber = lineNumber - 7; // Subtract 7 because of the added header lines
+            String message = "Invalid Manchester Syntax. Error at line " + lineNumber + ".";
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
         }
 
         return new OWLTask(modifyTaskDto.additionalData().solution(), modifyTaskDto.additionalData().pointsPerClass(), modifyTaskDto.additionalData().pointsPerRedundantAxiom(), modifyTaskDto.additionalData().pointsPerUndefinedClass(), modifyTaskDto.additionalData().pointsPerAxiomWithoutEntity());
@@ -146,6 +155,15 @@ public class OWLTaskService extends BaseTaskService<OWLTask, ModifyOWLTaskDto> {
 
         } catch (OWLRuntimeException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Manchester Syntax. " + e.getMessage());
+        } catch (OWLOntologyCreationException e) {
+            String x = e.getMessage();
+            //find the keyword line and save the next number after it, which indicates the line where the error is
+            String line = x.substring(x.indexOf("line ") + 5);
+            line = line.substring(0, line.indexOf("column")-1);
+            int lineNumber = Integer.parseInt(line);
+            lineNumber = lineNumber - 7; // Subtract 7 because of the added header lines
+            String message = "Invalid Manchester Syntax. Error at line " + lineNumber + ".";
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
         }
 
         task.setSolution(modifyTaskDto.additionalData().solution());
