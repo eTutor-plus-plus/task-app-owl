@@ -35,6 +35,10 @@ public class OWLTask extends BaseTask {
     @Column(name = "pointsPerUndefinedClass", nullable = false)
     private int pointsPerUndefinedClass;
 
+    @NotNull
+    @Column(name = "pointsPerAxiomWithoutEntity", nullable = false)
+    private int pointsPerAxiomWithoutEntity;
+
     /**
      * Creates a new instance of class {@link OWLTask}.
      */
@@ -46,11 +50,12 @@ public class OWLTask extends BaseTask {
      *
      * @param solution The solution ontology in Manchester syntax.
      */
-    public OWLTask(String solution, String pointsPerClass, int pointsPerRedundantAxiom, int pointsPerUndefinedClass) {
+    public OWLTask(String solution, String pointsPerClass, int pointsPerRedundantAxiom, int pointsPerUndefinedClass, int pointsPerAxiomWithoutEntity) {
         this.solution = solution;
         this.pointsPerClass = pointsPerClass;
         this.pointsPerRedundantAxiom = pointsPerRedundantAxiom;
         this.pointsPerUndefinedClass = pointsPerUndefinedClass;
+        this.pointsPerAxiomWithoutEntity = pointsPerAxiomWithoutEntity;
     }
 
     /**
@@ -60,12 +65,13 @@ public class OWLTask extends BaseTask {
      * @param status    The status.
      * @param solution  The solution ontology in Manchester syntax.
      */
-    public OWLTask(BigDecimal maxPoints, TaskStatus status, String solution, String pointsPerClass, int pointsPerRedundantAxiom, int pointsPerUndefinedClass) {
+    public OWLTask(BigDecimal maxPoints, TaskStatus status, String solution, String pointsPerClass, int pointsPerRedundantAxiom, int pointsPerUndefinedClass, int pointsPerAxiomWithoutEntity) {
         super(maxPoints, status);
         this.solution = solution;
         this.pointsPerClass = pointsPerClass;
         this.pointsPerRedundantAxiom = pointsPerRedundantAxiom;
         this.pointsPerUndefinedClass = pointsPerUndefinedClass;
+        this.pointsPerAxiomWithoutEntity = pointsPerAxiomWithoutEntity;
     }
 
     /**
@@ -76,12 +82,13 @@ public class OWLTask extends BaseTask {
      * @param status    The status.
      * @param solution  The solution ontology in Manchester syntax.
      */
-    public OWLTask(Long id, BigDecimal maxPoints, TaskStatus status, String solution, String pointsPerClass, int pointsPerRedundantAxiom, int pointsPerUndefinedClass) {
+    public OWLTask(Long id, BigDecimal maxPoints, TaskStatus status, String solution, String pointsPerClass, int pointsPerRedundantAxiom, int pointsPerUndefinedClass, int pointsPerAxiomWithoutEntity) {
         super(id, maxPoints, status);
         this.solution = solution;
         this.pointsPerClass = pointsPerClass;
         this.pointsPerRedundantAxiom = pointsPerRedundantAxiom;
         this.pointsPerUndefinedClass = pointsPerUndefinedClass;
+        this.pointsPerAxiomWithoutEntity = pointsPerAxiomWithoutEntity;
     }
 
     /**
@@ -121,6 +128,15 @@ public class OWLTask extends BaseTask {
     }
 
     /**
+     * Gets the points deducted per axiom without an entity.
+     *
+     * @return The points deducted per axiom without an entity.
+     */
+    public int getPointsPerAxiomWithoutEntity() {
+        return pointsPerAxiomWithoutEntity;
+    }
+
+    /**
      * Sets the solution ontology in Manchester syntax.
      *
      * @param solution The solution ontology.
@@ -154,5 +170,14 @@ public class OWLTask extends BaseTask {
      */
     public void setPointsPerUndefinedClass(int pointsPerUndefinedClass) {
         this.pointsPerUndefinedClass = pointsPerUndefinedClass;
+    }
+
+    /**
+     * Sets the pointsPerAxiomWithoutEntity.
+     *
+     * @param pointsPerAxiomWithoutEntity The points per axiom without an entity.
+     */
+    public void setPointsPerAxiomWithoutEntity(int pointsPerAxiomWithoutEntity) {
+        this.pointsPerAxiomWithoutEntity = pointsPerAxiomWithoutEntity;
     }
 }

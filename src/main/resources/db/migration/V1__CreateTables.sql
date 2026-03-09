@@ -4,13 +4,6 @@ CREATE TYPE submission_mode AS ENUM ('run', 'diagnose', 'submit');
 CREATE CAST (CHARACTER VARYING as task_status) WITH INOUT AS IMPLICIT;
 CREATE CAST (CHARACTER VARYING as submission_mode) WITH INOUT AS IMPLICIT;
 
-CREATE TABLE task_group
-(
-    id         BIGINT      NOT NULL,
-    status     TASK_STATUS NOT NULL,
-    CONSTRAINT task_group_pk PRIMARY KEY (id)
-);
-
 CREATE TABLE task
 (
     id            BIGINT        NOT NULL,
@@ -20,6 +13,7 @@ CREATE TABLE task
     points_per_class VARCHAR NOT NULL, -- custom column
     points_per_redundant_axiom NUMERIC NOT NULL, -- custom column
     points_per_undefined_class NUMERIC NOT NULL, -- custom column
+    points_per_axiom_without_entity NUMERIC NOT NULL, -- custom column
     CONSTRAINT task_pk PRIMARY KEY (id)
 );
 

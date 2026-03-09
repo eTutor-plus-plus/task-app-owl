@@ -21,8 +21,8 @@ class OWLTaskServiceTest {
     @Test
     void createTask() {
         // Arrange
-        ModifyTaskDto<ModifyOWLTaskDto> dto = new ModifyTaskDto<>(7L, BigDecimal.TEN, "owl", TaskStatus.APPROVED, new ModifyOWLTaskDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal", "Person=3, Human=2, Animal=1", 1, 1));
-        OWLTaskService service = new OWLTaskService(null, null, null);
+        ModifyTaskDto<ModifyOWLTaskDto> dto = new ModifyTaskDto<>(7L, BigDecimal.TEN, "owl", TaskStatus.APPROVED, new ModifyOWLTaskDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal", "Person=3, Human=2, Animal=1", 1, 1, 1));
+        OWLTaskService service = new OWLTaskService(null, null);
 
         // Act
         OWLTask task = service.createTask(3, dto);
@@ -34,8 +34,8 @@ class OWLTaskServiceTest {
     @Test
     void createTaskInvalidType() {
         // Arrange
-        ModifyTaskDto<ModifyOWLTaskDto> dto = new ModifyTaskDto<>(7L, BigDecimal.TEN, "sql", TaskStatus.APPROVED, new ModifyOWLTaskDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal", "Person=3, Human=2, Animal=1", 1, 1));
-        OWLTaskService service = new OWLTaskService(null, null, null);
+        ModifyTaskDto<ModifyOWLTaskDto> dto = new ModifyTaskDto<>(7L, BigDecimal.TEN, "sql", TaskStatus.APPROVED, new ModifyOWLTaskDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal", "Person=3, Human=2, Animal=1", 1, 1, 1));
+        OWLTaskService service = new OWLTaskService(null, null);
 
         // Act & Assert
         assertThrows(ResponseStatusException.class, () -> service.createTask(3, dto));
@@ -44,9 +44,9 @@ class OWLTaskServiceTest {
     @Test
     void updateTask() {
         // Arrange
-        ModifyTaskDto<ModifyOWLTaskDto> dto = new ModifyTaskDto<>(7L, BigDecimal.TEN, "owl", TaskStatus.APPROVED, new ModifyOWLTaskDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal", "Person=3, Human=2, Animal=1", 1, 1));
-        OWLTaskService service = new OWLTaskService(null, null, null);
-        OWLTask task = new OWLTask("Class: Apple\nSubClassOf: Fruit\nDisjointWith: Orange", "Apple=3, Fruit=2, Orange=1", 1, 1);
+        ModifyTaskDto<ModifyOWLTaskDto> dto = new ModifyTaskDto<>(7L, BigDecimal.TEN, "owl", TaskStatus.APPROVED, new ModifyOWLTaskDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal", "Person=3, Human=2, Animal=1", 1, 1, 1));
+        OWLTaskService service = new OWLTaskService(null, null);
+        OWLTask task = new OWLTask("Class: Apple\nSubClassOf: Fruit\nDisjointWith: Orange", "Apple=3, Fruit=2, Orange=1", 1, 1, 1);
 
         // Act
         service.updateTask(task, dto);
@@ -58,9 +58,9 @@ class OWLTaskServiceTest {
     @Test
     void updateTaskInvalidType() {
         // Arrange
-        ModifyTaskDto<ModifyOWLTaskDto> dto = new ModifyTaskDto<>(7L, BigDecimal.TEN, "sql", TaskStatus.APPROVED, new ModifyOWLTaskDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal", "Person=3, Human=2, Animal=1", 1, 1));
-        OWLTaskService service = new OWLTaskService(null, null, null);
-        OWLTask task = new OWLTask("Class: Apple\nSubClassOf: Fruit\nDisjointWith: Orange", "Apple=3, Fruit=2, Orange=1", 1, 1);
+        ModifyTaskDto<ModifyOWLTaskDto> dto = new ModifyTaskDto<>(7L, BigDecimal.TEN, "sql", TaskStatus.APPROVED, new ModifyOWLTaskDto("Class: Person\nSubClassOf: Human\nDisjointWith: Animal", "Person=3, Human=2, Animal=1", 1, 1, 1));
+        OWLTaskService service = new OWLTaskService(null, null);
+        OWLTask task = new OWLTask("Class: Apple\nSubClassOf: Fruit\nDisjointWith: Orange", "Apple=3, Fruit=2, Orange=1", 1, 1, 1);
 
         // Act & Assert
         assertThrows(ResponseStatusException.class, () -> service.updateTask(task, dto));
@@ -70,8 +70,8 @@ class OWLTaskServiceTest {
     void mapToReturnData() {
         // Arrange
         MessageSource ms = mock(MessageSource.class);
-        OWLTaskService service = new OWLTaskService(null, null, ms);
-        OWLTask task = new OWLTask("Class: Apple\nSubClassOf: Fruit\nDisjointWith: Orange", "Apple=3, Fruit=2, Orange=1", 1, 1);
+        OWLTaskService service = new OWLTaskService(null, ms);
+        OWLTask task = new OWLTask("Class: Apple\nSubClassOf: Fruit\nDisjointWith: Orange", "Apple=3, Fruit=2, Orange=1", 1, 1, 1);
         task.setSolution("Class: Person\nSubClassOf: Human\nDisjointWith: Animal");
 
         // Act

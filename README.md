@@ -1,14 +1,8 @@
-# eTutor Task-App: Binary Search
+# eTutor Task-App: OWL
 
-This application provides a REST-interface for following task type: binary_search.
+This application provides a REST-interface for following task type: owl.
 
-Students have to guess a number. The student's input is compared with the number stored in the solution, and it is returned whether the number sought is _smaller_, _equal_ to or
-_greater_ than the input.
-
-This project **can** be used as a template for new task apps. Replace all occurrences of `binarysearch`/`binary search`/`binary-search`/`binary_search` with the name of your task
-type.
-
-Task-App repositories should start with `task-app-` and end with the task type (e.g. `task-app-binary-search`).
+Students have to write an ontology that matches the given solution semantically. Points are deducted for each class or individual that is incomplete, missing or wrong, redundant axioms, and wrong or missing axioms without an associated class or individual.
 
 ## Development
 

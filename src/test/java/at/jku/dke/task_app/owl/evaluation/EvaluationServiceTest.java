@@ -5,7 +5,6 @@ import at.jku.dke.etutor.task_app.dto.SubmitSubmissionDto;
 import at.jku.dke.etutor.task_app.dto.TaskStatus;
 import at.jku.dke.task_app.owl.DatabaseSetupExtension;
 import at.jku.dke.task_app.owl.data.entities.OWLTask;
-import at.jku.dke.task_app.owl.data.repositories.OWLTaskGroupRepository;
 import at.jku.dke.task_app.owl.data.repositories.OWLTaskRepository;
 import at.jku.dke.task_app.owl.dto.OWLSubmissionDto;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,8 +24,6 @@ class EvaluationServiceTest {
     @Autowired
     private EvaluationService evaluationService;
     @Autowired
-    private OWLTaskGroupRepository taskGroupRepository;
-    @Autowired
     private OWLTaskRepository taskRepository;
     private long taskId;
 
@@ -35,7 +32,7 @@ class EvaluationServiceTest {
         taskRepository.deleteAll();
 
         var task = taskRepository.save(new OWLTask(1L, BigDecimal.TEN, TaskStatus.APPROVED,
-            "Class: Person\nSubClassOf: Human\nDisjointWith: Animal", "Person=3, Human=2, Animal=1", 1, 1));
+            "Class: Person\nSubClassOf: Human\nDisjointWith: Animal", "Person=3, Human=2, Animal=1", 1, 1, 1));
         this.taskId = task.getId();
     }
 

@@ -10,5 +10,5 @@ import java.io.Serializable;
  *
  * @param solution The solution.
  */
-public record OWLTaskDto(@NotNull String solution, @NotNull String pointsPerClass, @NotNull int pointsPerRedundantAxiom, @NotNull int pointsPerUndefinedClass) implements Serializable {
+public record OWLTaskDto(@NotNull String solution, @NotNull String pointsPerClass, @NotNull int pointsPerRedundantAxiom, @NotNull int pointsPerUndefinedClass, @NotNull int pointsPerAxiomWithoutEntity) implements Serializable {
 }
