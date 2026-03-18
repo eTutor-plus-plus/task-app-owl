@@ -615,8 +615,8 @@ public class EvaluationService {
             for (OWLAxiom ax : submittedAxioms) {
                 if (!solReasoner.isEntailed(ax)) {
                     result.wrongAxioms.add(ax);
-                    result.incompleteClasses.addAll(ax.getClassesInSignature());
-                    result.incompleteIndividuals.addAll(ax.getIndividualsInSignature());
+                    result.incompleteClasses.addAll(getMainClass(ax));
+                    result.incompleteIndividuals.addAll(getMainIndividual(ax));
                     LOG.info("Wrong axiom: {}", ax);
                     LOG.info("Classes involved in wrong axiom: {}", ax.getClassesInSignature());
                     LOG.info("Individuals involved in wrong axiom: {}", ax.getIndividualsInSignature());
@@ -626,8 +626,8 @@ public class EvaluationService {
             for (OWLAxiom ax : solutionAxioms) {
                 if (!subReasoner.isEntailed(ax)) {
                     result.missingAxioms.add(ax);
-                    result.incompleteClasses.addAll(ax.getClassesInSignature());
-                    result.incompleteIndividuals.addAll(ax.getIndividualsInSignature());
+                    result.incompleteClasses.addAll(getMainClass(ax));
+                    result.incompleteIndividuals.addAll(getMainIndividual(ax));
                     LOG.info("Missing axiom: {}", ax);
                     LOG.info("Classes involved in missing axiom: {}", ax.getClassesInSignature());
                     LOG.info("Individuals involved in missing axiom: {}", ax.getIndividualsInSignature());
@@ -644,6 +644,70 @@ public class EvaluationService {
         } catch (OWLReasonerRuntimeException e) {
             LOG.error("Reasoner error: {}", e.getMessage());
             return null;
+        }
+    }
+
+    // Gets the "main" class from an axiom, or all if there was no matching axiom type
+    public static Set<OWLClass> getMainClass (OWLAxiom axiom) {
+        Set<OWLClass> mainClass = new HashSet<>();
+        switch (axiom) {
+            case OWLSubClassOfAxiom sub ->
+                addClassIfNamed(sub.getSubClass(), mainClass);
+            case OWLClassAssertionAxiom cla ->
+                addClassIfNamed(cla.getClassExpression(), mainClass);
+            case OWLObjectPropertyDomainAxiom obj ->
+                addClassIfNamed(obj.getDomain(), mainClass);
+            case OWLObjectPropertyRangeAxiom obj ->
+                addClassIfNamed(obj.getRange(), mainClass);
+            case OWLDataPropertyDomainAxiom data ->
+                addClassIfNamed(data.getDomain(), mainClass);
+            case OWLHasKeyAxiom key ->
+                addClassIfNamed(key.getClassExpression(), mainClass);
+            case OWLDisjointUnionAxiom du ->
+                mainClass.add(du.getOWLClass());
+            case OWLEquivalentClassesAxiom eq ->
+                eq.getClassExpressions().forEach(e -> addClassIfNamed(e, mainClass));
+            case OWLDisjointClassesAxiom dj ->
+                dj.getClassExpressions().forEach(e -> addClassIfNamed(e, mainClass));
+            default ->
+                mainClass.addAll(axiom.getClassesInSignature());
+        }
+        return mainClass;
+    }
+
+    public static void addClassIfNamed(OWLClassExpression expr, Set<OWLClass> set) {
+        if (!expr.isAnonymous()) {
+            set.add(expr.asOWLClass());
+        }
+    }
+
+    // Gets the "main" individual from an axiom, or all if there was no matching axiom type
+    public static Set<OWLIndividual> getMainIndividual (OWLAxiom axiom) {
+        Set<OWLIndividual> mainIndividual = new HashSet<>();
+        switch (axiom) {
+            case OWLClassAssertionAxiom cla ->
+                addIndividualIfNamed(cla.getIndividual(), mainIndividual);
+            case OWLObjectPropertyAssertionAxiom obj ->
+                addIndividualIfNamed(obj.getSubject(), mainIndividual);
+            case OWLDataPropertyAssertionAxiom data ->
+                addIndividualIfNamed(data.getSubject(), mainIndividual);
+            case OWLNegativeObjectPropertyAssertionAxiom negObj ->
+                addIndividualIfNamed(negObj.getSubject(), mainIndividual);
+            case OWLNegativeDataPropertyAssertionAxiom negData ->
+                addIndividualIfNamed(negData.getSubject(), mainIndividual);
+            case OWLSameIndividualAxiom same ->
+                same.getIndividuals().forEach(i -> addIndividualIfNamed(i, mainIndividual));
+            case OWLDifferentIndividualsAxiom diff ->
+                diff.getIndividuals().forEach(i -> addIndividualIfNamed(i, mainIndividual));
+            default ->
+                mainIndividual.addAll(axiom.getIndividualsInSignature());
+        }
+        return mainIndividual;
+    }
+
+    public static void addIndividualIfNamed(OWLIndividual ind, Set<OWLIndividual> set) {
+        if (!ind.isAnonymous()) {
+            set.add(ind);
         }
     }
 

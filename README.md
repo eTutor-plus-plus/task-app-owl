@@ -4,6 +4,8 @@ This application provides a REST-interface for following task type: owl.
 
 Students have to write an ontology that matches the given solution semantically. Points are deducted for each class or individual that is incomplete, missing or wrong, redundant axioms, and wrong or missing axioms without an associated class or individual.
 
+The input consists of an ontology in Manchester Syntax as well as different point allocations for the classes and individuals, redundant axioms, axioms without classes and individuals as well as undefined classes/individuals. The input ontology is checked for syntactic validity and consistency. The points assigned to each class/individual are checked for valid identifiers.
+
 ## Development
 
 In development environment, the API documentation is available at http://localhost:8081/docs.
